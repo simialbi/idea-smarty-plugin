@@ -1,13 +1,13 @@
 {
-  parserClass="com.example.smarty.parser.SmartyParser"
-  parserUtilClass="com.example.smarty.parser.SmartyParserUtil"
+  parserClass="ch.erlebnisbank.smarty.parser.SmartyParser"
+  parserUtilClass="ch.erlebnisbank.smarty.parser.SmartyParserUtil"
 
   elementTypeHolderClass="ch.erlebnisbank.smarty.psi.SmartyTypes"
-  elementTypeClass="com.example.smarty.psi.SmartyElementType"
-  tokenTypeClass="com.example.smarty.psi.SmartyTokenType"
+  elementTypeClass="ch.erlebnisbank.smarty.psi.SmartyElementType"
+  tokenTypeClass="ch.erlebnisbank.smarty.psi.SmartyTokenType"
 
-  psiPackage="com.example.smarty.psi"
-  psiImplPackage="com.example.smarty.psi.impl"
+  psiPackage="ch.erlebnisbank.smarty.psi"
+  psiImplPackage="ch.erlebnisbank.smarty.psi.impl"
 
   parserImports=[
     "com.intellij.lang.PsiBuilder.Error"

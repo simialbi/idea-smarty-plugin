@@ -1,5 +1,6 @@
 package ch.erlebnisbank.smarty
 
+import ch.erlebnisbank.smarty.parser.SmartyParser
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ParserDefinition
 import com.intellij.lang.PsiParser
@@ -17,7 +18,7 @@ class SmartyParserDefinition : ParserDefinition {
     }
 
     override fun createParser(project: Project?): PsiParser {
-        TODO("Not yet implemented")
+        return SmartyParser()
     }
 
     override fun getFileNodeType(): IFileElementType {
