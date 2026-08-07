@@ -1,0 +1,479 @@
+{
+  parserClass="com.example.smarty.parser.SmartyParser"
+  parserUtilClass="com.example.smarty.parser.SmartyParserUtil"
+
+  elementTypeHolderClass="ch.erlebnisbank.smarty.psi.SmartyTypes"
+  elementTypeClass="com.example.smarty.psi.SmartyElementType"
+  tokenTypeClass="com.example.smarty.psi.SmartyTokenType"
+
+  psiPackage="com.example.smarty.psi"
+  psiImplPackage="com.example.smarty.psi.impl"
+
+  parserImports=[
+    "com.intellij.lang.PsiBuilder.Error"
+  ]
+
+  tokens = [
+    // Delimiters
+    LDELIM = "{"
+    RDELIM = "}"
+    LCOMMENT_START = "{*"
+    LCOMMENT_END = "*}"
+
+    // Operators
+    ASSIGN = "="
+    PIPE = "|"
+    DOT = "."
+    ARROW = "->"
+    COMMA = ","
+    SEMICOLON = ";"
+    COLON = ":"
+    QUESTION = "?"
+
+    // Brackets
+    LPAREN = "("
+    RPAREN = ")"
+    LBRACKET = "["
+    RBRACKET = "]"
+
+    // Arithmetic operators
+    PLUS = "+"
+    MINUS = "-"
+    MULT = "*"
+    DIV = "/"
+    MOD = "%"
+    MOD_KEYWORD = "mod"
+    DIV_KEYWORD = "div"
+
+    // Comparison operators
+    EQ = "=="
+    NEQ = "!="
+    EQEQ = "==="
+    NEQEQ = "!=="
+    LT = "<"
+    GT = ">"
+    LE = "<="
+    GE = ">="
+
+    // Logical operators
+    AND = "&&"
+    OR = "||"
+    NOT = "!"
+    AND_KEYWORD = "and"
+    OR_KEYWORD = "or"
+    NOT_KEYWORD = "not"
+
+    // Keywords
+    IF = "if"
+    ELSE = "else"
+    ELSEIF = "elseif"
+    FOREACH = "foreach"
+    FOREACHELSE = "foreachelse"
+    FOR = "for"
+    WHILE = "while"
+    SECTION = "section"
+    SECTIONELSE = "sectionelse"
+    SWITCH = "switch"
+    CASE = "case"
+    DEFAULT = "default"
+    BREAK = "break"
+    CONTINUE = "continue"
+    BLOCK = "block"
+    FUNCTION = "function"
+    CALL = "call"
+    EXTENDS = "extends"
+    INCLUDE = "include"
+    INSERT = "insert"
+    ASSIGN_KW = "assign"
+    APPEND = "append"
+    CAPTURE = "capture"
+    CONFIG_LOAD = "config_load"
+    DEBUG = "debug"
+    LITERAL = "literal"
+    NOCACHE = "nocache"
+    SETFILTER = "setfilter"
+    STRIP = "strip"
+    LDELIM_KW = "ldelim"
+    RDELIM_KW = "rdelim"
+
+    // Modifiers
+    UPPER = "upper"
+    LOWER = "lower"
+    CAPITALIZE = "capitalize"
+    CAT = "cat"
+    COUNT_PARAGRAPHS = "count_paragraphs"
+    COUNT_SENTENCES = "count_sentences"
+    COUNT_WORDS = "count_words"
+    DATE_FORMAT = "date_format"
+    ESCAPE = "escape"
+    FROM_CHARSET = "from_charset"
+    INDENT = "indent"
+    NL2BR = "nl2br"
+    REGEX_REPLACE = "regex_replace"
+    REPLACE = "replace"
+    SPACIFY = "spacify"
+    STRING_FORMAT = "string_format"
+    STRIP_TAGS = "strip_tags"
+    TO_CHARSET = "to_charset"
+    TRUNCATE = "truncate"
+    UNESCAPE = "unescape"
+    WORDWRAP = "wordwrap"
+    DEFAULT_MOD = "default"
+
+    // Special
+    AT = "@"
+    DOLLAR = "$"
+    HASH = "#"
+
+    // Token patterns
+    comment = "regexp://.*"
+    identifier = "regexp:[a-zA-Z_]\w*"
+    number = "regexp:\d+(\.\d*)?([eE][+-]?\d+)?"
+    string = "regexp:(\"([^\"\\\\]|\\\\.)*\"|'([^'\\\\]|\\\\.)*')"
+    html_tag = "regexp:<[^>]+>"
+    whitespace = "regexp:\s+"
+  ]
+
+  name(".*_expr")="expression"
+  extends(".*_expr")=expr
+  extends(".*_stmt")=stmt
+
+  pin(".*_list")=1
+  recoverWhile="not_pipe_or_rbrace"
+}
+
+// ============================================================================
+// ROOT RULE
+// ============================================================================
+
+root_rule ::= template_item*
+
+private template_item ::=
+    smarty_tag
+    | text_content
+    | html_content
+
+text_content ::= ~('{' | '<')+ {pin=1}
+
+html_content ::= html_tag {pin=1}
+
+// ============================================================================
+// SMARTY TAGS & COMMENTS
+// ============================================================================
+
+smarty_tag ::=
+    smarty_comment
+    | smarty_function_call
+    | smarty_literal_block
+    | smarty_nocache_block
+
+smarty_comment ::= LCOMMENT_START comment_content* LCOMMENT_END {pin=1}
+
+private comment_content ::= !(LCOMMENT_END) . {pin=1}
+
+smarty_literal_block ::= '{' LITERAL '}' literal_content* '{' '/' LITERAL '}' {pin=1}
+
+private literal_content ::= !'{' . {pin=1}
+
+smarty_nocache_block ::= '{' NOCACHE '}' nocache_content* '{' '/' NOCACHE '}' {pin=1}
+
+private nocache_content ::= !'{' . {pin=1}
+
+// ============================================================================
+// FUNCTION CALLS & STATEMENTS
+// ============================================================================
+
+smarty_function_call ::= '{' function_body '}' {pin=1}
+
+function_body ::=
+    if_statement
+    | elseif_statement
+    | else_statement
+    | foreach_statement
+    | foreachelse_statement
+    | for_statement
+    | while_statement
+    | section_statement
+    | sectionelse_statement
+    | switch_statement
+    | case_statement
+    | break_statement
+    | continue_statement
+    | block_statement
+    | function_statement
+    | call_statement
+    | extends_statement
+    | include_statement
+    | insert_statement
+    | assign_statement
+    | append_statement
+    | capture_statement
+    | config_load_statement
+    | debug_statement
+    | setfilter_statement
+    | ldelim_rdelim_statement
+    | variable_output
+
+// ============================================================================
+// CONTROL STRUCTURES
+// ============================================================================
+
+if_statement ::= IF expr assign_clause* {pin=1}
+
+elseif_statement ::= ELSEIF expr assign_clause* {pin=1}
+
+else_statement ::= ELSE {pin=1}
+
+foreach_statement ::=
+    FOREACH expression AS dollar_var assign_clause* '}' template_item* '{' '/' FOREACH
+    {pin=1 name="foreach loop"}
+
+foreachelse_statement ::= FOREACHELSE {pin=1}
+
+for_statement ::=
+    FOR for_init ';' for_condition ';' for_increment assign_clause*
+    {pin=1 name="for loop"}
+
+private for_init ::= assignment
+private for_condition ::= expr
+private for_increment ::= assignment
+
+while_statement ::= WHILE expr assign_clause* {pin=1 name="while loop"}
+
+section_statement ::=
+    SECTION IDENTIFIER assign_clause*
+    {pin=1 name="section loop"}
+
+sectionelse_statement ::= SECTIONELSE {pin=1}
+
+switch_statement ::= SWITCH expr {pin=1}
+
+case_statement ::= CASE case_value {pin=1}
+
+private case_value ::= expr | DEFAULT
+
+break_statement ::= BREAK [NUMBER]
+
+continue_statement ::= CONTINUE [NUMBER]
+
+// ============================================================================
+// BLOCK & FUNCTION DEFINITIONS
+// ============================================================================
+
+block_statement ::= BLOCK IDENTIFIER [APPEND | PREPEND] {pin=1}
+
+function_statement ::= FUNCTION IDENTIFIER [FUNCTION_PARAMS] {pin=1}
+
+private FUNCTION_PARAMS ::= LPAREN param_list RPAREN
+private param_list ::= IDENTIFIER (',' IDENTIFIER)*
+
+call_statement ::= CALL template_reference [call_arguments] {pin=1}
+
+private template_reference ::= (IDENTIFIER | STRING) ('.' IDENTIFIER)*
+private call_arguments ::= LPAREN [assign_list] RPAREN
+
+// ============================================================================
+// INCLUDE & EXTEND STATEMENTS
+// ============================================================================
+
+extends_statement ::= EXTENDS STRING [assign_list] {pin=1}
+
+include_statement ::=
+    INCLUDE STRING [assign_list] [NOCACHE]
+    {pin=1}
+
+insert_statement ::=
+    INSERT STRING [assign_list]
+    {pin=1}
+
+// ============================================================================
+// ASSIGNMENT STATEMENTS
+// ============================================================================
+
+assign_statement ::=
+    ASSIGN_KW variable '=' expr assign_clause*
+    {pin=1 name="assign statement"}
+
+append_statement ::=
+    APPEND variable '=' expr assign_clause*
+    {pin=1 name="append statement"}
+
+capture_statement ::=
+    CAPTURE variable assign_clause*
+    {pin=1 name="capture statement"}
+
+config_load_statement ::=
+    CONFIG_LOAD STRING [assign_list]
+    {pin=1}
+
+debug_statement ::= DEBUG [DEBUG_VARS] {pin=1}
+
+private DEBUG_VARS ::= (IDENTIFIER | variable) (',' (IDENTIFIER | variable))*
+
+setfilter_statement ::=
+    SETFILTER modifier_list
+    {pin=1}
+
+ldelim_rdelim_statement ::=
+    LDELIM_KW | RDELIM_KW
+
+// ============================================================================
+// VARIABLE OUTPUT
+// ============================================================================
+
+variable_output ::=
+    expression modifier_chain?
+    {pin=1}
+
+modifier_chain ::= modifier+
+
+modifier ::=
+    PIPE modifier_name [modifier_arguments]
+    {pin=1}
+
+private modifier_name ::=
+    UPPER | LOWER | CAPITALIZE | CAT | COUNT_PARAGRAPHS | COUNT_SENTENCES
+    | COUNT_WORDS | DATE_FORMAT | ESCAPE | FROM_CHARSET | INDENT
+    | NL2BR | REGEX_REPLACE | REPLACE | SPACIFY | STRING_FORMAT
+    | STRIP_TAGS | TO_CHARSET | TRUNCATE | UNESCAPE | WORDWRAP | DEFAULT_MOD
+    | IDENTIFIER
+
+private modifier_arguments ::=
+    COLON modifier_param (',' modifier_param)*
+
+private modifier_param ::=
+    expr
+
+// ============================================================================
+// EXPRESSIONS
+// ============================================================================
+
+expr ::=
+    ternary_expr
+
+private ternary_expr ::=
+    logical_or_expr (QUESTION expr COLON expr)?
+
+private logical_or_expr ::=
+    logical_and_expr ((OR | OR_KEYWORD) logical_and_expr)*
+
+private logical_and_expr ::=
+    logical_not_expr ((AND | AND_KEYWORD) logical_not_expr)*
+
+private logical_not_expr ::=
+    ((NOT | NOT_KEYWORD) logical_not_expr)
+    | comparison_expr
+
+private comparison_expr ::=
+    additive_expr ((EQ | NEQ | EQEQ | NEQEQ | LT | GT | LE | GE) additive_expr)*
+
+private additive_expr ::=
+    multiplicative_expr ((PLUS | MINUS) multiplicative_expr)*
+
+private multiplicative_expr ::=
+    unary_expr ((MULT | DIV | MOD | MOD_KEYWORD | DIV_KEYWORD) unary_expr)*
+
+private unary_expr ::=
+    ((PLUS | MINUS | NOT | NOT_KEYWORD) unary_expr)
+    | postfix_expr
+
+private postfix_expr ::=
+    primary_expr (postfix_op)*
+
+private postfix_op ::=
+    member_access
+    | array_access
+    | method_call
+
+private primary_expr ::=
+    variable
+    | literal
+    | function_call
+    | config_variable
+    | LPAREN expr RPAREN
+    | IDENTIFIER
+
+// ============================================================================
+// VARIABLES & MEMBER ACCESS
+// ============================================================================
+
+variable ::= DOLLAR variable_name
+
+private variable_name ::=
+    IDENTIFIER member_access*
+
+member_access ::=
+    DOT IDENTIFIER
+    | ARROW IDENTIFIER
+    | array_access
+
+array_access ::=
+    LBRACKET array_index RBRACKET
+
+private array_index ::=
+    expr
+    | IDENTIFIER
+    | NUMBER
+
+config_variable ::= AT IDENTIFIER
+
+// ============================================================================
+// FUNCTION CALLS
+// ============================================================================
+
+function_call ::=
+    function_name LPAREN [argument_list] RPAREN
+
+private function_name ::=
+    IDENTIFIER
+
+argument_list ::=
+    named_argument (',' named_argument)*
+    | positional_argument (',' positional_argument)*
+
+private named_argument ::=
+    IDENTIFIER '=' expr
+
+private positional_argument ::=
+    expr
+
+// ============================================================================
+// LITERALS
+// ============================================================================
+
+literal ::=
+    NUMBER
+    | STRING
+    | BOOLEAN
+    | NULL_LITERAL
+    | ARRAY_LITERAL
+
+private BOOLEAN ::= 'true' | 'false' | 'yes' | 'no' | 'on' | 'off'
+private NULL_LITERAL ::= 'null'
+
+ARRAY_LITERAL ::=
+    LBRACKET [array_element_list] RBRACKET
+
+private array_element_list ::=
+    array_element (',' array_element)* [COMMA]
+
+private array_element ::=
+    (expr '=>')? expr
+
+// ============================================================================
+// MISCELLANEOUS RULES
+// ============================================================================
+
+private assignment ::= variable ASSIGN expr
+
+private assign_clause ::=
+    IDENTIFIER '=' expr
+
+private assign_list ::=
+    assign_clause (',' assign_clause)*
+
+private modifier_list ::=
+    modifier (',' modifier)*
+
+private not_pipe_or_rbrace ::=
+    !(PIPE | RDELIM)
