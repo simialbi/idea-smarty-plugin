@@ -8,6 +8,7 @@
 
   psiPackage="ch.erlebnisbank.smarty.psi"
   psiImplPackage="ch.erlebnisbank.smarty.psi.impl"
+  psiImplUtilClass="ch.erlebnisbank.smarty.psi.impl.SmartyPsiImplUtil"
 
   parserImports=[
     "com.intellij.lang.PsiBuilder.Error"
@@ -171,7 +172,7 @@ smarty_comment ::= LCOMMENT_START comment_content* LCOMMENT_END {pin=1}
 
 private comment_content ::= !(LCOMMENT_END) . {pin=1}
 
-smarty_literal_block ::= '{' LITERAL '}' literal_content* '{' '/' LITERAL '}' {pin=1}
+smarty_literal_block ::= '{' LITERAL '}' literal_content* '{' '/' LITERAL '}' {pin=1 methods=[getLiteralContent]}
 
 private literal_content ::= !'{' . {pin=1}
 
@@ -226,7 +227,7 @@ else_statement ::= ELSE {pin=1}
 
 foreach_statement ::=
     FOREACH expression AS dollar_var assign_clause* '}' template_item* '{' '/' FOREACH
-    {pin=1 name="foreach loop"}
+    {pin=1 name="foreach loop" methods=[getForeachVariable getForeachItems getForeachValueVar getForeachKeyVar]}
 
 foreachelse_statement ::= FOREACHELSE {pin=1}
 
@@ -292,7 +293,7 @@ insert_statement ::=
 
 assign_statement ::=
     ASSIGN_KW variable '=' expr assign_clause*
-    {pin=1 name="assign statement"}
+    {pin=1 name="assign statement" methods=[getAssignTarget getAssignValue]}
 
 append_statement ::=
     APPEND variable '=' expr assign_clause*
@@ -329,7 +330,7 @@ modifier_chain ::= modifier+
 
 modifier ::=
     PIPE modifier_name [modifier_arguments]
-    {pin=1}
+    {pin=1 methods=[getModifierName getModifierParams]}
 
 private modifier_name ::=
     UPPER | LOWER | CAPITALIZE | CAT | COUNT_PARAGRAPHS | COUNT_SENTENCES
@@ -349,7 +350,7 @@ private modifier_param ::=
 // ============================================================================
 
 expr ::=
-    ternary_expr
+    ternary_expr {methods=[getOperator isLiteral]}
 
 private ternary_expr ::=
     logical_or_expr (QUESTION expr COLON expr)?
@@ -397,7 +398,7 @@ private primary_expr ::=
 // VARIABLES & MEMBER ACCESS
 // ============================================================================
 
-variable ::= DOLLAR variable_name
+variable ::= DOLLAR variable_name {methods=[getName hasArrayAccess getArrayIndices getPropertyChain]}
 
 private variable_name ::=
     IDENTIFIER member_access*
@@ -422,7 +423,7 @@ config_variable ::= AT IDENTIFIER
 // ============================================================================
 
 function_call ::=
-    function_name LPAREN [argument_list] RPAREN
+    function_name LPAREN [argument_list] RPAREN {methods=[getFunctionName getFunctionArguments isBuiltinFunction]}
 
 private function_name ::=
     IDENTIFIER

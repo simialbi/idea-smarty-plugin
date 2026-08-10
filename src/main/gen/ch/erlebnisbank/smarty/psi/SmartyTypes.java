@@ -116,7 +116,6 @@ public interface SmartyTypes {
   IElementType LDELIM = new SmartyTokenType("{");
   IElementType LDELIM_KW = new SmartyTokenType("ldelim");
   IElementType LE = new SmartyTokenType("<=");
-  IElementType LITERAL = new SmartyTokenType("literal");
   IElementType LOWER = new SmartyTokenType("lower");
   IElementType LPAREN = new SmartyTokenType("(");
   IElementType LT = new SmartyTokenType("<");

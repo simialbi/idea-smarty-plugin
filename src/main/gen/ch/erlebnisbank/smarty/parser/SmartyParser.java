@@ -5,7 +5,6 @@ import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.PsiBuilder.Marker;
 
 import static ch.erlebnisbank.smarty.psi.SmartyTypes.*;
-import static ch.erlebnisbank.smarty.psi.SmartyTypes.*;
 //import static ch.erlebnisbank.smarty.parser.SmartyParserUtil.*;
 import static com.intellij.lang.parser.GeneratedParserUtilBase.*;
 

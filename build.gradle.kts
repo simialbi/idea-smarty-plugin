@@ -17,6 +17,7 @@ dependencies {
 
         // Add plugin dependencies for compilation here, for example:
         // bundledPlugin("com.intellij.java")
+        bundledPlugin("com.intellij.java")
     }
 }
 

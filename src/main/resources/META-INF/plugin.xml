@@ -8,7 +8,7 @@
     <name>Smarty</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor url="https://www.yourcompany.com">YourCompany</vendor>
+    <vendor url="https://www.erlebnisbank.ch">Erlebnisbank</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
@@ -20,6 +20,7 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
 
     <resource-bundle>messages.MyMessageBundle</resource-bundle>
 
@@ -30,6 +31,13 @@
                   language="Smarty" extensions="tpl" />
         <lang.syntaxHighlighterFactory language="Smarty" implementationClass="ch.erlebnisbank.smarty.SmartySyntaxHighlighterFactory" />
         <colorSettingsPage implementation="ch.erlebnisbank.smarty.SmartyColorSettingsPage" />
+        <annotator language="JAVA" implementationClass="ch.erlebnisbank.smarty.SmartyAnnotator" />
+        <codeInsight.lineMarkerProvider language="JAVA"
+                                        implementationClass="ch.erlebnisbank.smarty.SmartyLineMarkerProvider" />
+        <completion.contributor language="Smarty"
+                                implementationClass="ch.erlebnisbank.smarty.SmartyCompletionContributor" />
+        <psi.referenceContributor language="Smarty"
+                                  implementation="ch.erlebnisbank.smarty.SmartyReferenceContributor" />
     </extensions>
 
 </idea-plugin>
