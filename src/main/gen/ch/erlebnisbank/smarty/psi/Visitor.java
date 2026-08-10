@@ -28,7 +28,7 @@ public class Visitor extends PsiElementVisitor {
   }
 
   public void visitBlockStatement(@NotNull BlockStatement o) {
-    visitPsiElement(o);
+    visitSmartyNamedElement(o);
   }
 
   public void visitBreakStatement(@NotNull BreakStatement o) {
@@ -100,7 +100,7 @@ public class Visitor extends PsiElementVisitor {
   }
 
   public void visitFunctionStatement(@NotNull FunctionStatement o) {
-    visitPsiElement(o);
+    visitSmartyNamedElement(o);
   }
 
   public void visitHtmlContent(@NotNull HtmlContent o) {
@@ -151,7 +151,7 @@ public class Visitor extends PsiElementVisitor {
     visitPsiElement(o);
   }
 
-  public void visitSmartyComment(@NotNull SmartyComment o) {
+  public void visitSmartyClosingTag(@NotNull SmartyClosingTag o) {
     visitPsiElement(o);
   }
 
@@ -189,6 +189,10 @@ public class Visitor extends PsiElementVisitor {
 
   public void visitWhileStatement(@NotNull WhileStatement o) {
     visitPsiElement(o);
+  }
+
+  public void visitSmartyNamedElement(@NotNull SmartyNamedElement o) {
+    visitElement(o);
   }
 
   public void visitPsiElement(@NotNull PsiElement o) {

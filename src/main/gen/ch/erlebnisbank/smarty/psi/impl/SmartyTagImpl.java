@@ -1,11 +1,15 @@
 // This is a generated file. Not intended for manual editing.
 package ch.erlebnisbank.smarty.psi.impl;
 
+import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
+import com.intellij.psi.util.PsiTreeUtil;
+import static ch.erlebnisbank.smarty.psi.SmartyTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
-import com.example.smarty.psi.*;
+import ch.erlebnisbank.smarty.psi.*;
 
 public class SmartyTagImpl extends ASTWrapperPsiElement implements SmartyTag {
 
@@ -25,8 +29,8 @@ public class SmartyTagImpl extends ASTWrapperPsiElement implements SmartyTag {
 
   @Override
   @Nullable
-  public SmartyComment getSmartyComment() {
-    return findChildByClass(SmartyComment.class);
+  public SmartyClosingTag getSmartyClosingTag() {
+    return findChildByClass(SmartyClosingTag.class);
   }
 
   @Override

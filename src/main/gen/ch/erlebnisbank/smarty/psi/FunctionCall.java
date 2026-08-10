@@ -10,4 +10,12 @@ public interface FunctionCall extends PsiElement {
   @Nullable
   ArgumentList getArgumentList();
 
+  @NotNull
+  String getFunctionName();
+
+  @NotNull
+  String[] getFunctionArguments();
+
+  boolean isBuiltinFunction();
+
 }

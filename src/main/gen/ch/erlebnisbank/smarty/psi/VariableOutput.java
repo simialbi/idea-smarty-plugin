@@ -7,6 +7,9 @@ import com.intellij.psi.PsiElement;
 
 public interface VariableOutput extends PsiElement {
 
+  @NotNull
+  Expr getExpr();
+
   @Nullable
   ModifierChain getModifierChain();
 

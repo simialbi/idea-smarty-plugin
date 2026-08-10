@@ -8,7 +8,7 @@ import com.intellij.psi.PsiElement;
 public interface SmartyTag extends PsiElement {
 
   @Nullable
-  SmartyComment getSmartyComment();
+  SmartyClosingTag getSmartyClosingTag();
 
   @Nullable
   SmartyFunctionCall getSmartyFunctionCall();

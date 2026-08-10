@@ -10,4 +10,15 @@ public interface Variable extends PsiElement {
   @NotNull
   List<MemberAccess> getMemberAccessList();
 
+  @Nullable
+  String getName();
+
+  boolean hasArrayAccess();
+
+  @NotNull
+  String[] getArrayIndices();
+
+  @NotNull
+  String[] getPropertyChain();
+
 }

@@ -11,12 +11,18 @@ public interface ForeachStatement extends PsiElement {
   List<Expr> getExprList();
 
   @NotNull
-  List<HtmlContent> getHtmlContentList();
+  List<Variable> getVariableList();
 
-  @NotNull
-  List<SmartyTag> getSmartyTagList();
+  @Nullable
+  String getForeachVariable();
 
-  @NotNull
-  List<TextContent> getTextContentList();
+  @Nullable
+  Expr getForeachItems();
+
+  @Nullable
+  String getForeachValueVar();
+
+  @Nullable
+  String getForeachKeyVar();
 
 }

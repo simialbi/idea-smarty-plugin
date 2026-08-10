@@ -10,6 +10,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementResolveResult
 import com.intellij.psi.PsiPolyVariantReferenceBase
 import com.intellij.psi.ResolveResult
+import com.intellij.psi.impl.source.tree.Factory
 import com.intellij.psi.util.PsiTreeUtil
 
 /**
@@ -24,7 +25,40 @@ import com.intellij.psi.util.PsiTreeUtil
  * platform from reporting the same thing a second time as an error.
  */
 abstract class SmartyReference(element: PsiElement, rangeInElement: TextRange) :
-    PsiPolyVariantReferenceBase<PsiElement>(element, rangeInElement, true)
+    PsiPolyVariantReferenceBase<PsiElement>(element, rangeInElement, true) {
+
+    /**
+     * Rewrites the part of the leaf this reference covers.
+     *
+     * `PsiReferenceBase` would delegate this to an `ElementManipulator`, but a manipulator can
+     * only be registered for a PSI class, and Smarty leaves are plain platform leaves shared
+     * with every other language - registering for those would be far too broad. Rebuilding the
+     * single leaf here keeps the change scoped to Smarty.
+     */
+    override fun handleElementRename(newElementName: String): PsiElement = replaceRangeWith(newElementName)
+
+    /**
+     * Rewrites the covered range by rebuilding the single leaf that holds it. The reference is
+     * anchored on the statement, so the leaf has to be located first.
+     */
+    protected fun replaceRangeWith(text: String): PsiElement {
+        val host = element
+        val absolute = rangeInElement.shiftRight(host.textRange.startOffset)
+
+        val leaf = host.containingFile?.findElementAt(absolute.startOffset) ?: return host
+        val withinLeaf = absolute.shiftLeft(leaf.textRange.startOffset)
+        if (withinLeaf.endOffset > leaf.textLength) return host
+
+        val replacement = Factory.createSingleLeafElement(
+            leaf.node.elementType,
+            withinLeaf.replace(leaf.text, text),
+            null,
+            leaf.manager
+        )
+        leaf.node.treeParent.replaceChild(leaf.node, replacement)
+        return host
+    }
+}
 
 /**
  * The path of an `{include}`, `{extends}` or `{insert}`, resolving to the referenced template.
@@ -40,6 +74,16 @@ class SmartyTemplateReference(
     override fun multiResolve(incompleteCode: Boolean): Array<ResolveResult> {
         val target = SmartyUtil.resolveTemplate(element, path) ?: return ResolveResult.EMPTY_ARRAY
         return arrayOf<ResolveResult>(PsiElementResolveResult(target))
+    }
+
+    /**
+     * Renaming a template hands over the bare file name, but the reference holds a path. The
+     * directory is kept so that `{include file="parts/header.tpl"}` becomes
+     * `parts/footer.tpl` rather than a broken `footer.tpl`.
+     */
+    override fun handleElementRename(newElementName: String): PsiElement {
+        val directory = path.substringBeforeLast('/', "")
+        return replaceRangeWith(if (directory.isEmpty()) newElementName else "$directory/$newElementName")
     }
 
     /** Completes a path inside the quotes with the templates of the project. */

@@ -1,6 +1,7 @@
 {
   parserClass="ch.erlebnisbank.smarty.parser.SmartyParser"
-  parserUtilClass="ch.erlebnisbank.smarty.parser.SmartyParserUtil"
+  // No parserUtilClass: the grammar has no external or meta rules, so the generated parser
+  // only needs the platform's GeneratedParserUtilBase, which Grammar-Kit imports by default.
 
   elementTypeHolderClass="ch.erlebnisbank.smarty.psi.SmartyTypes"
   elementTypeClass="ch.erlebnisbank.smarty.psi.SmartyElementType"
@@ -10,16 +11,10 @@
   psiImplPackage="ch.erlebnisbank.smarty.psi.impl"
   psiImplUtilClass="ch.erlebnisbank.smarty.psi.impl.SmartyPsiImplUtil"
 
-  parserImports=[
-    "com.intellij.lang.PsiBuilder.Error"
-  ]
-
   tokens = [
     // Delimiters
     LDELIM = "{"
     RDELIM = "}"
-    LCOMMENT_START = "{*"
-    LCOMMENT_END = "*}"
 
     // Operators
     ASSIGN = "="
@@ -56,6 +51,20 @@
     LE = "<="
     GE = ">="
 
+    // Textual equivalents of the comparison operators. The lexer also accepts the second
+    // spelling where Smarty documents one: ne for neq, ge for gte, le for lte.
+    // https://smarty-php.github.io/smarty/stable/designers/language-basic-syntax/language-syntax-operators
+    EQ_KEYWORD = "eq"
+    NEQ_KEYWORD = "neq"
+    LT_KEYWORD = "lt"
+    GT_KEYWORD = "gt"
+    LE_KEYWORD = "lte"
+    GE_KEYWORD = "gte"
+
+    // Regular expression match: {if $a matches "/^[a-z]+$/"}, PHP's preg_match($b, $a).
+    // It has no symbolic spelling, so it is a comparison operator that only exists as a word.
+    MATCHES = "matches"
+
     // Logical operators
     AND = "&&"
     OR = "||"
@@ -87,10 +96,11 @@
     INSERT = "insert"
     ASSIGN_KW = "assign"
     APPEND = "append"
+    PREPEND = "prepend"
     CAPTURE = "capture"
     CONFIG_LOAD = "config_load"
     DEBUG = "debug"
-    LITERAL = "literal"
+    LITERAL_KW = "literal"
     NOCACHE = "nocache"
     SETFILTER = "setfilter"
     STRIP = "strip"
@@ -125,6 +135,17 @@
     AT = "@"
     DOLLAR = "$"
     HASH = "#"
+    FAT_ARROW = "=>"
+
+    // Literals produced by the lexer
+    TRUE = "true"
+    FALSE = "false"
+    NULL_LITERAL = "null"
+
+    // Produced by the lexer only, never written in a rule
+    TEXT = "text"
+    WS = "ws"
+    BAD_CHARACTER = "bad_character"
 
     // Token patterns
     comment = "regexp://.*"
@@ -137,10 +158,8 @@
 
   name(".*_expr")="expression"
   extends(".*_expr")=expr
-  extends(".*_stmt")=stmt
 
   pin(".*_list")=1
-  recoverWhile="not_pipe_or_rbrace"
 }
 
 // ============================================================================
@@ -154,7 +173,7 @@ private template_item ::=
     | text_content
     | html_content
 
-text_content ::= ~('{' | '<')+ {pin=1}
+text_content ::= TEXT+ {pin=1}
 
 html_content ::= html_tag {pin=1}
 
@@ -163,22 +182,29 @@ html_content ::= html_tag {pin=1}
 // ============================================================================
 
 smarty_tag ::=
-    smarty_comment
-    | smarty_function_call
-    | smarty_literal_block
+    smarty_literal_block
     | smarty_nocache_block
+    | smarty_closing_tag
+    | smarty_function_call
 
-smarty_comment ::= LCOMMENT_START comment_content* LCOMMENT_END {pin=1}
+// Closing tags are matched flat rather than as a nesting construct: the features built on this
+// PSI locate declarations by type, none of them need the block structure.
+smarty_closing_tag ::= '{' '/' closing_keyword '}' {pin=2}
 
-private comment_content ::= !(LCOMMENT_END) . {pin=1}
+private closing_keyword ::=
+    IF | FOREACH | FOR | WHILE | SECTION | SWITCH | BLOCK | FUNCTION
+    | CAPTURE | STRIP | SETFILTER | NOCACHE | LITERAL_KW
 
-smarty_literal_block ::= '{' LITERAL '}' literal_content* '{' '/' LITERAL '}' {pin=1 methods=[getLiteralContent]}
+// No rule for comments: the parser definition reports COMMENT as a comment token, so the
+// builder skips it and the platform turns it into a PsiComment leaf of its own.
 
-private literal_content ::= !'{' . {pin=1}
+smarty_literal_block ::=
+    '{' LITERAL_KW '}' verbatim_content* '{' '/' LITERAL_KW '}'
+    {pin=2 methods=[getLiteralContent]}
 
-smarty_nocache_block ::= '{' NOCACHE '}' nocache_content* '{' '/' NOCACHE '}' {pin=1}
+smarty_nocache_block ::= '{' NOCACHE '}' verbatim_content* '{' '/' NOCACHE '}' {pin=2}
 
-private nocache_content ::= !'{' . {pin=1}
+private verbatim_content ::= TEXT | html_tag
 
 // ============================================================================
 // FUNCTION CALLS & STATEMENTS
@@ -226,7 +252,7 @@ elseif_statement ::= ELSEIF expr assign_clause* {pin=1}
 else_statement ::= ELSE {pin=1}
 
 foreach_statement ::=
-    FOREACH expression AS dollar_var assign_clause* '}' template_item* '{' '/' FOREACH
+    FOREACH [expr AS variable [FAT_ARROW variable]] assign_clause*
     {pin=1 name="foreach loop" methods=[getForeachVariable getForeachItems getForeachValueVar getForeachKeyVar]}
 
 foreachelse_statement ::= FOREACHELSE {pin=1}
@@ -261,9 +287,32 @@ continue_statement ::= CONTINUE [NUMBER]
 // BLOCK & FUNCTION DEFINITIONS
 // ============================================================================
 
-block_statement ::= BLOCK IDENTIFIER [APPEND | PREPEND] {pin=1}
+block_statement ::=
+    BLOCK declaration_name [APPEND | PREPEND] assign_clause*
+    {
+      pin=1
+      mixin="ch.erlebnisbank.smarty.psi.impl.SmartyNamedElementImpl"
+      implements="ch.erlebnisbank.smarty.psi.SmartyNamedElement"
+      methods=[getName setName getNameIdentifier getPresentation]
+    }
 
-function_statement ::= FUNCTION IDENTIFIER [FUNCTION_PARAMS] {pin=1}
+// Named for the same reason a block is: {function name="box"} declares something the rest of the
+// project navigates to. Both rules read their name through declaration_name, so they share the
+// helpers in SmartyPsiImplUtil.
+function_statement ::=
+    FUNCTION declaration_name [FUNCTION_PARAMS] assign_clause*
+    {
+      pin=1
+      mixin="ch.erlebnisbank.smarty.psi.impl.SmartyNamedElementImpl"
+      implements="ch.erlebnisbank.smarty.psi.SmartyNamedElement"
+      methods=[getName setName getNameIdentifier getPresentation]
+    }
+
+// Both the attribute form used by nearly every real template - {block name="content"} - and the
+// bare form {block content}.
+private declaration_name ::= (IDENTIFIER '=' name_value) | name_value
+
+private name_value ::= IDENTIFIER | STRING
 
 private FUNCTION_PARAMS ::= LPAREN param_list RPAREN
 private param_list ::= IDENTIFIER (',' IDENTIFIER)*
@@ -277,15 +326,15 @@ private call_arguments ::= LPAREN [assign_list] RPAREN
 // INCLUDE & EXTEND STATEMENTS
 // ============================================================================
 
-extends_statement ::= EXTENDS STRING [assign_list] {pin=1}
+extends_statement ::= EXTENDS [STRING] assign_clause* {pin=1 mixin="ch.erlebnisbank.smarty.psi.impl.SmartyReferenceHostImpl"}
 
 include_statement ::=
-    INCLUDE STRING [assign_list] [NOCACHE]
-    {pin=1}
+    INCLUDE [STRING] assign_clause* [NOCACHE]
+    {pin=1 mixin="ch.erlebnisbank.smarty.psi.impl.SmartyReferenceHostImpl"}
 
 insert_statement ::=
-    INSERT STRING [assign_list]
-    {pin=1}
+    INSERT [STRING | IDENTIFIER] assign_clause*
+    {pin=1 mixin="ch.erlebnisbank.smarty.psi.impl.SmartyReferenceHostImpl"}
 
 // ============================================================================
 // ASSIGNMENT STATEMENTS
@@ -304,7 +353,7 @@ capture_statement ::=
     {pin=1 name="capture statement"}
 
 config_load_statement ::=
-    CONFIG_LOAD STRING [assign_list]
+    CONFIG_LOAD [STRING] assign_clause*
     {pin=1}
 
 debug_statement ::= DEBUG [DEBUG_VARS] {pin=1}
@@ -323,7 +372,7 @@ ldelim_rdelim_statement ::=
 // ============================================================================
 
 variable_output ::=
-    expression modifier_chain?
+    expr modifier_chain?
     {pin=1}
 
 modifier_chain ::= modifier+
@@ -339,8 +388,12 @@ private modifier_name ::=
     | STRIP_TAGS | TO_CHARSET | TRUNCATE | UNESCAPE | WORDWRAP | DEFAULT_MOD
     | IDENTIFIER
 
+// Modifier parameters are colon separated, one colon per parameter:
+// {$text|truncate:30:"...":true}. The rule used to allow a single colon followed by commas,
+// which is neither what Smarty documents nor what getModifierParams already reads, so anything
+// past the first parameter failed to parse.
 private modifier_arguments ::=
-    COLON modifier_param (',' modifier_param)*
+    (COLON modifier_param)+
 
 private modifier_param ::=
     expr
@@ -366,7 +419,14 @@ private logical_not_expr ::=
     | comparison_expr
 
 private comparison_expr ::=
-    additive_expr ((EQ | NEQ | EQEQ | NEQEQ | LT | GT | LE | GE) additive_expr)*
+    additive_expr (comparison_operator additive_expr)*
+
+// MATCHES sits with the comparison operators because that is how Smarty documents it and how it
+// reads - {if $a matches "/re/" && $b} groups the way the && suggests.
+private comparison_operator ::=
+    EQ | NEQ | EQEQ | NEQEQ | LT | GT | LE | GE
+    | EQ_KEYWORD | NEQ_KEYWORD | LT_KEYWORD | GT_KEYWORD | LE_KEYWORD | GE_KEYWORD
+    | MATCHES
 
 private additive_expr ::=
     multiplicative_expr ((PLUS | MINUS) multiplicative_expr)*
@@ -449,8 +509,8 @@ literal ::=
     | NULL_LITERAL
     | ARRAY_LITERAL
 
-private BOOLEAN ::= 'true' | 'false' | 'yes' | 'no' | 'on' | 'off'
-private NULL_LITERAL ::= 'null'
+// The lexer already folds yes/on into TRUE and no/off into FALSE.
+private BOOLEAN ::= TRUE | FALSE
 
 ARRAY_LITERAL ::=
     LBRACKET [array_element_list] RBRACKET

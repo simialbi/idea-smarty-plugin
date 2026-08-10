@@ -10,4 +10,10 @@ public interface Modifier extends PsiElement {
   @NotNull
   List<Expr> getExprList();
 
+  @NotNull
+  String getModifierName();
+
+  @NotNull
+  String[] getModifierParams();
+
 }

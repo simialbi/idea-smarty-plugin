@@ -33,29 +33,32 @@ class SmartyReferenceContributor : PsiReferenceContributor() {
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
         val provider = SmartyReferenceProvider()
 
-        // A path or a block name is written either quoted - {include file="x.tpl"} - or bare -
-        // {block content} - so the provider has to see both token types.
-        registrar.registerReferenceProvider(PlatformPatterns.psiElement(SmartyTypes.STRING), provider)
-        registrar.registerReferenceProvider(PlatformPatterns.psiElement(SmartyTypes.IDENTIFIER), provider)
+        // Registered on the statements rather than on the string or identifier inside them.
+        // Contributed references only reach elements that ask the registry for them, which the
+        // platform's leaves do not do - see SmartyReferenceHostImpl. Anchoring on the statement
+        // also covers both spellings at once, {include file="x.tpl"} and {include "x.tpl"}.
+        for (statement in HOSTS) {
+            registrar.registerReferenceProvider(PlatformPatterns.psiElement(statement), provider)
+        }
+    }
+
+    private companion object {
+        private val HOSTS = listOf(
+            IncludeStatement::class.java,
+            ExtendsStatement::class.java,
+            InsertStatement::class.java,
+            BlockStatement::class.java
+        )
     }
 }
 
 private class SmartyReferenceProvider : PsiReferenceProvider() {
 
-    override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> {
-        val statement = PsiTreeUtil.getParentOfType(
-            element,
-            IncludeStatement::class.java,
-            ExtendsStatement::class.java,
-            InsertStatement::class.java,
-            BlockStatement::class.java
-        ) ?: return PsiReference.EMPTY_ARRAY
-
-        return when (statement) {
-            is BlockStatement -> blockReference(element, statement)
-            else -> templateReference(element, statement)
+    override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> =
+        when (element) {
+            is BlockStatement -> blockReference(element, element)
+            else -> templateReference(element, element)
         }
-    }
 
     private fun templateReference(element: PsiElement, statement: PsiElement): Array<PsiReference> {
         val template = SmartyUtil.findTemplatePath(statement) ?: return PsiReference.EMPTY_ARRAY
@@ -73,9 +76,8 @@ private class SmartyReferenceProvider : PsiReferenceProvider() {
      * Converts an absolute range into one relative to [element], which is what
      * `PsiReferenceBase` expects.
      *
-     * This is also what keeps the reference off the wrong string: the provider is called for
-     * every string of the statement, but only the one actually holding the path or the name
-     * contains the range, so `title` in `{include file="x.tpl" title="Hello"}` is skipped.
+     * Narrowing the range to just the path or the name is what keeps Ctrl+Click and Rename off
+     * the rest of the tag: in `{include file="x.tpl" title="Hello"}` only `x.tpl` is covered.
      *
      * @return the relative range, or `null` when the range is not inside this element
      */

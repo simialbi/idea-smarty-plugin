@@ -33,7 +33,36 @@ class SmartyColorSettingsPage : ColorSettingsPage {
     }
 
     override fun getDemoText(): @NonNls String {
-        return "";
+        return """
+            {* replace each carriage return, tab and new line with a space *}
+
+            {${'$'}articleTitle}
+            {${'$'}articleTitle|regex_replace:"/[\r\t\n]/":" "}
+
+            {config_load file="colors.conf"}
+
+            {include file="header.tpl"}
+
+            {if ${'$'}logged_in}
+                Welcome, <span style="color:{#fontColor#}">{${'$'}name}!</span>
+            {else}
+                hi, {${'$'}name}
+            {/if}
+            
+            {foreach ${'$'}res as ${'$'}r} 
+                {if ${'$'}r@index eq 3}
+                    {continue}
+                {/if}
+                {${'$'}r.id} 
+                {${'$'}r.name}
+            {foreachelse}
+              .. no results .. 
+            {/foreach}
+            
+            {${'$'}myVar|regex_replace:"/foo/":"bar"}
+
+            {include file="footer.tpl"}
+        """;
     }
 
     override fun getAdditionalHighlightingTagToDescriptorMap(): Map<String?, TextAttributesKey?>? {

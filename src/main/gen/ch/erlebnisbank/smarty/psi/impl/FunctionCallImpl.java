@@ -1,11 +1,15 @@
 // This is a generated file. Not intended for manual editing.
 package ch.erlebnisbank.smarty.psi.impl;
 
+import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
+import com.intellij.psi.util.PsiTreeUtil;
+import static ch.erlebnisbank.smarty.psi.SmartyTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
-import com.example.smarty.psi.*;
+import ch.erlebnisbank.smarty.psi.*;
 
 public class FunctionCallImpl extends ASTWrapperPsiElement implements FunctionCall {
 
@@ -27,6 +31,23 @@ public class FunctionCallImpl extends ASTWrapperPsiElement implements FunctionCa
   @Nullable
   public ArgumentList getArgumentList() {
     return findChildByClass(ArgumentList.class);
+  }
+
+  @Override
+  @NotNull
+  public String getFunctionName() {
+    return SmartyPsiImplUtil.getFunctionName(this);
+  }
+
+  @Override
+  @NotNull
+  public String[] getFunctionArguments() {
+    return SmartyPsiImplUtil.getFunctionArguments(this);
+  }
+
+  @Override
+  public boolean isBuiltinFunction() {
+    return SmartyPsiImplUtil.isBuiltinFunction(this);
   }
 
 }

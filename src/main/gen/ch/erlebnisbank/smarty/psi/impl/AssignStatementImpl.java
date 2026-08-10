@@ -4,10 +4,12 @@ package ch.erlebnisbank.smarty.psi.impl;
 import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
+import static ch.erlebnisbank.smarty.psi.SmartyTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
-import com.example.smarty.psi.*;
+import ch.erlebnisbank.smarty.psi.*;
 
 public class AssignStatementImpl extends ASTWrapperPsiElement implements AssignStatement {
 
@@ -35,6 +37,18 @@ public class AssignStatementImpl extends ASTWrapperPsiElement implements AssignS
   @Nullable
   public Variable getVariable() {
     return findChildByClass(Variable.class);
+  }
+
+  @Override
+  @NotNull
+  public String getAssignTarget() {
+    return SmartyPsiImplUtil.getAssignTarget(this);
+  }
+
+  @Override
+  @Nullable
+  public Expr getAssignValue() {
+    return SmartyPsiImplUtil.getAssignValue(this);
   }
 
 }

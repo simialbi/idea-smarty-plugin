@@ -1,13 +1,17 @@
 // This is a generated file. Not intended for manual editing.
 package ch.erlebnisbank.smarty.psi.impl;
 
+import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
-import com.example.smarty.psi.*;
+import com.intellij.psi.util.PsiTreeUtil;
+import static ch.erlebnisbank.smarty.psi.SmartyTypes.*;
+import ch.erlebnisbank.smarty.psi.*;
+import com.intellij.navigation.ItemPresentation;
 
-public class BlockStatementImpl extends ASTWrapperPsiElement implements BlockStatement {
+public class BlockStatementImpl extends SmartyNamedElementImpl implements BlockStatement {
 
   public BlockStatementImpl(@NotNull ASTNode node) {
     super(node);
@@ -21,6 +25,36 @@ public class BlockStatementImpl extends ASTWrapperPsiElement implements BlockSta
   public void accept(@NotNull PsiElementVisitor visitor) {
     if (visitor instanceof Visitor) accept((Visitor)visitor);
     else super.accept(visitor);
+  }
+
+  @Override
+  @NotNull
+  public List<Expr> getExprList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, Expr.class);
+  }
+
+  @Override
+  @Nullable
+  public String getName() {
+    return SmartyPsiImplUtil.getName(this);
+  }
+
+  @Override
+  @NotNull
+  public PsiElement setName(@NotNull String p1) {
+    return SmartyPsiImplUtil.setName(this, p1);
+  }
+
+  @Override
+  @Nullable
+  public PsiElement getNameIdentifier() {
+    return SmartyPsiImplUtil.getNameIdentifier(this);
+  }
+
+  @Override
+  @NotNull
+  public ItemPresentation getPresentation() {
+    return SmartyPsiImplUtil.getPresentation(this);
   }
 
 }

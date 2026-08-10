@@ -4,7 +4,23 @@ package ch.erlebnisbank.smarty.psi;
 import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
+import com.intellij.navigation.ItemPresentation;
 
-public interface FunctionStatement extends PsiElement {
+public interface FunctionStatement extends SmartyNamedElement {
+
+  @NotNull
+  List<Expr> getExprList();
+
+  @Nullable
+  String getName();
+
+  @NotNull
+  PsiElement setName(@NotNull String p1);
+
+  @Nullable
+  PsiElement getNameIdentifier();
+
+  @NotNull
+  ItemPresentation getPresentation();
 
 }

@@ -177,7 +177,7 @@ class SmartyAnnotator : Annotator {
 
     private fun annotateLeaf(element: PsiElement, holder: AnnotationHolder) {
         val type = element.node?.elementType ?: return
-        if (type === SmartyTokenType.BAD_CHARACTER || type === TokenType.BAD_CHARACTER) {
+        if (type === SmartyTypes.BAD_CHARACTER || type === TokenType.BAD_CHARACTER) {
             holder.newAnnotation(HighlightSeverity.ERROR, "Unexpected character")
                 .range(element)
                 .highlightType(ProblemHighlightType.GENERIC_ERROR)

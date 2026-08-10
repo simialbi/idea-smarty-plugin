@@ -491,22 +491,68 @@ class SmartyUtil private constructor() {
          * @return all block statements
          */
         @JvmStatic
-        fun findAllBlocks(project: Project): List<BlockStatement> {
-            val result = ArrayList<BlockStatement>()
-            val virtualFiles = FileTypeIndex.getFiles(
-                SmartyFileType.INSTANCE,
-                GlobalSearchScope.allScope(project)
-            )
+        fun findAllBlocks(project: Project): List<BlockStatement> =
+            findAllBlocks(project, GlobalSearchScope.allScope(project))
 
-            for (virtualFile in virtualFiles) {
-                val smartyFile = PsiManager.getInstance(project).findFile(virtualFile) as? SmartyFile
-                if (smartyFile != null) {
-                    val blocks = PsiTreeUtil.getChildrenOfType(smartyFile, BlockStatement::class.java)
-                    if (blocks != null) {
-                        result.addAll(listOf(*blocks))
-                    }
-                }
+        @JvmStatic
+        fun findAllBlocks(project: Project, scope: GlobalSearchScope): List<BlockStatement> =
+            findInTemplates(project, scope, BlockStatement::class.java)
+
+        // ========================================================================
+        // DECLARATION SEARCH METHODS
+        // ========================================================================
+
+        /**
+         * Every declaration a template names - `{block}` and `{function}` - within [scope].
+         *
+         * This is what Navigate | Symbol lists, so it deliberately does not go through an index
+         * of its own: Smarty templates are small and there is no stub index for them yet, and
+         * the chooser only ever asks for one scope at a time.
+         *
+         * @param project current project
+         * @param scope the files to search, as handed over by the chooser
+         * @return all named declarations, in file order
+         */
+        @JvmStatic
+        fun findDeclarations(project: Project, scope: GlobalSearchScope): List<SmartyNamedElement> =
+            findInTemplates(project, scope, SmartyNamedElement::class.java)
+
+        /**
+         * The declarations carrying a given name.
+         *
+         * @param project current project
+         * @param scope the files to search
+         * @param name the declared name to match, without quotes
+         * @return the matching declarations
+         */
+        @JvmStatic
+        fun findDeclarationsByName(
+            project: Project,
+            scope: GlobalSearchScope,
+            name: String
+        ): List<SmartyNamedElement> =
+            findDeclarations(project, scope).filter { declaration -> name == declaration.name }
+
+        /**
+         * Collects elements of one type out of every Smarty template in [scope].
+         *
+         * Descends the whole tree rather than looking at the file's own children: a statement
+         * sits under `smarty_tag` → `smarty_function_call` → `function_body`, never directly
+         * under the file.
+         */
+        private fun <T : PsiElement> findInTemplates(
+            project: Project,
+            scope: GlobalSearchScope,
+            type: Class<T>
+        ): List<T> {
+            val result = ArrayList<T>()
+            val manager = PsiManager.getInstance(project)
+
+            for (virtualFile in FileTypeIndex.getFiles(SmartyFileType.INSTANCE, scope)) {
+                val smartyFile = manager.findFile(virtualFile) as? SmartyFile ?: continue
+                result.addAll(PsiTreeUtil.findChildrenOfType(smartyFile, type))
             }
+
             return result
         }
 
@@ -525,8 +571,8 @@ class SmartyUtil private constructor() {
             val result = LinkedList<String>()
             var prevElement = element.prevSibling
 
-            while (prevElement is SmartyComment || prevElement is PsiComment || prevElement is PsiWhiteSpace) {
-                if (prevElement is SmartyComment || prevElement is PsiComment) {
+            while (prevElement is PsiComment || prevElement is PsiWhiteSpace) {
+                if (prevElement is PsiComment) {
                     val commentText = prevElement.text
                         .replaceFirst("^\\{\\*\\s*".toRegex(), "")
                         .replaceFirst("\\s*\\*\\}$".toRegex(), "")
@@ -550,7 +596,7 @@ class SmartyUtil private constructor() {
             var nextElement = element.nextSibling
 
             while (nextElement != null) {
-                if (nextElement is SmartyComment || nextElement is PsiComment) {
+                if (nextElement is PsiComment) {
                     return nextElement.text
                         .replaceFirst("^\\{\\*\\s*".toRegex(), "")
                         .replaceFirst("\\s*\\*\\}$".toRegex(), "")

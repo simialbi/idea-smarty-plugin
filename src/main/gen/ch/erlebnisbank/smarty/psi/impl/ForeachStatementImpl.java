@@ -4,10 +4,12 @@ package ch.erlebnisbank.smarty.psi.impl;
 import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
+import static ch.erlebnisbank.smarty.psi.SmartyTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
-import com.example.smarty.psi.*;
+import ch.erlebnisbank.smarty.psi.*;
 
 public class ForeachStatementImpl extends ASTWrapperPsiElement implements ForeachStatement {
 
@@ -33,20 +35,32 @@ public class ForeachStatementImpl extends ASTWrapperPsiElement implements Foreac
 
   @Override
   @NotNull
-  public List<HtmlContent> getHtmlContentList() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, HtmlContent.class);
+  public List<Variable> getVariableList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, Variable.class);
   }
 
   @Override
-  @NotNull
-  public List<SmartyTag> getSmartyTagList() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, SmartyTag.class);
+  @Nullable
+  public String getForeachVariable() {
+    return SmartyPsiImplUtil.getForeachVariable(this);
   }
 
   @Override
-  @NotNull
-  public List<TextContent> getTextContentList() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, TextContent.class);
+  @Nullable
+  public Expr getForeachItems() {
+    return SmartyPsiImplUtil.getForeachItems(this);
+  }
+
+  @Override
+  @Nullable
+  public String getForeachValueVar() {
+    return SmartyPsiImplUtil.getForeachValueVar(this);
+  }
+
+  @Override
+  @Nullable
+  public String getForeachKeyVar() {
+    return SmartyPsiImplUtil.getForeachKeyVar(this);
   }
 
 }

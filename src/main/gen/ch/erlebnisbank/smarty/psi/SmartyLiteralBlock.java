@@ -7,4 +7,7 @@ import com.intellij.psi.PsiElement;
 
 public interface SmartyLiteralBlock extends PsiElement {
 
+  @NotNull
+  String getLiteralContent();
+
 }

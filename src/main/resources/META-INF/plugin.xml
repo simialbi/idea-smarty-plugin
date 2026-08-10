@@ -21,23 +21,35 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
-
-    <resource-bundle>messages.MyMessageBundle</resource-bundle>
+    <!-- HTML and XML PSI. There is no com.intellij.modules.html in 2025.3 - HTML support is part
+         of the XML module, and depending on a module that does not exist silently disables the
+         whole plugin. -->
+    <depends>com.intellij.modules.xml</depends>
 
     <!-- Extensions defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
         <fileType name="Smarty Template" implementationClass="ch.erlebnisbank.smarty.SmartyFileType" fieldName="INSTANCE"
                   language="Smarty" extensions="tpl" />
+        <lang.parserDefinition language="Smarty" implementationClass="ch.erlebnisbank.smarty.SmartyParserDefinition" />
         <lang.syntaxHighlighterFactory language="Smarty" implementationClass="ch.erlebnisbank.smarty.SmartySyntaxHighlighterFactory" />
         <colorSettingsPage implementation="ch.erlebnisbank.smarty.SmartyColorSettingsPage" />
-        <annotator language="JAVA" implementationClass="ch.erlebnisbank.smarty.SmartyAnnotator" />
-        <codeInsight.lineMarkerProvider language="JAVA"
+        <annotator language="Smarty" implementationClass="ch.erlebnisbank.smarty.SmartyAnnotator" />
+        <codeInsight.lineMarkerProvider language="Smarty"
                                         implementationClass="ch.erlebnisbank.smarty.SmartyLineMarkerProvider" />
         <completion.contributor language="Smarty"
                                 implementationClass="ch.erlebnisbank.smarty.SmartyCompletionContributor" />
         <psi.referenceContributor language="Smarty"
                                   implementation="ch.erlebnisbank.smarty.SmartyReferenceContributor" />
+        <lang.refactoringSupport language="Smarty"
+                                 implementationClass="ch.erlebnisbank.smarty.SmartyRefactoringSupportProvider" />
+        <lang.findUsagesProvider language="Smarty"
+                                 implementationClass="ch.erlebnisbank.smarty.SmartyFindUsagesProvider" />
+        <lang.foldingBuilder language="Smarty"
+                             implementationClass="ch.erlebnisbank.smarty.SmartyFoldingBuilder" />
+        <gotoSymbolContributor implementation="ch.erlebnisbank.smarty.SmartyChooseByNameContributor" />
+        <lang.formatter language="Smarty"
+                        implementationClass="ch.erlebnisbank.smarty.SmartyFormattingModelBuilder" />
     </extensions>
 
 </idea-plugin>

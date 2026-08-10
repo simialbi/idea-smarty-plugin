@@ -28,4 +28,9 @@ public interface Expr extends PsiElement {
   @NotNull
   List<Variable> getVariableList();
 
+  @Nullable
+  String getOperator();
+
+  boolean isLiteral();
+
 }

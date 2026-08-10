@@ -1,8 +1,6 @@
 // This is a generated file. Not intended for manual editing.
 package ch.erlebnisbank.smarty.psi;
 
-import ch.erlebnisbank.smarty.psi.SmartyElementType;
-import ch.erlebnisbank.smarty.psi.SmartyTokenType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.PsiElement;
 import com.intellij.lang.ASTNode;
@@ -46,7 +44,7 @@ public interface SmartyTypes {
   IElementType SECTIONELSE_STATEMENT = new SmartyElementType("SECTIONELSE_STATEMENT");
   IElementType SECTION_STATEMENT = new SmartyElementType("SECTION_STATEMENT");
   IElementType SETFILTER_STATEMENT = new SmartyElementType("SETFILTER_STATEMENT");
-  IElementType SMARTY_COMMENT = new SmartyElementType("SMARTY_COMMENT");
+  IElementType SMARTY_CLOSING_TAG = new SmartyElementType("SMARTY_CLOSING_TAG");
   IElementType SMARTY_FUNCTION_CALL = new SmartyElementType("SMARTY_FUNCTION_CALL");
   IElementType SMARTY_LITERAL_BLOCK = new SmartyElementType("SMARTY_LITERAL_BLOCK");
   IElementType SMARTY_NOCACHE_BLOCK = new SmartyElementType("SMARTY_NOCACHE_BLOCK");
@@ -65,6 +63,7 @@ public interface SmartyTypes {
   IElementType ASSIGN = new SmartyTokenType("=");
   IElementType ASSIGN_KW = new SmartyTokenType("assign");
   IElementType AT = new SmartyTokenType("@");
+  IElementType BAD_CHARACTER = new SmartyTokenType("bad_character");
   IElementType BLOCK = new SmartyTokenType("block");
   IElementType BREAK = new SmartyTokenType("break");
   IElementType CALL = new SmartyTokenType("call");
@@ -87,22 +86,25 @@ public interface SmartyTypes {
   IElementType DIV = new SmartyTokenType("/");
   IElementType DIV_KEYWORD = new SmartyTokenType("div");
   IElementType DOLLAR = new SmartyTokenType("$");
-  IElementType DOLLAR_VAR = new SmartyTokenType("dollar_var");
   IElementType DOT = new SmartyTokenType(".");
   IElementType ELSE = new SmartyTokenType("else");
   IElementType ELSEIF = new SmartyTokenType("elseif");
   IElementType EQ = new SmartyTokenType("==");
   IElementType EQEQ = new SmartyTokenType("===");
+  IElementType EQ_KEYWORD = new SmartyTokenType("eq");
   IElementType ESCAPE = new SmartyTokenType("escape");
-  IElementType EXPRESSION = new SmartyTokenType("expression");
   IElementType EXTENDS = new SmartyTokenType("extends");
+  IElementType FALSE = new SmartyTokenType("false");
+  IElementType FAT_ARROW = new SmartyTokenType("=>");
   IElementType FOR = new SmartyTokenType("for");
   IElementType FOREACH = new SmartyTokenType("foreach");
   IElementType FOREACHELSE = new SmartyTokenType("foreachelse");
   IElementType FROM_CHARSET = new SmartyTokenType("from_charset");
   IElementType FUNCTION = new SmartyTokenType("function");
   IElementType GE = new SmartyTokenType(">=");
+  IElementType GE_KEYWORD = new SmartyTokenType("gte");
   IElementType GT = new SmartyTokenType(">");
+  IElementType GT_KEYWORD = new SmartyTokenType("gt");
   IElementType HASH = new SmartyTokenType("#");
   IElementType HTML_TAG = new SmartyTokenType("html_tag");
   IElementType IDENTIFIER = new SmartyTokenType("IDENTIFIER");
@@ -111,14 +113,16 @@ public interface SmartyTypes {
   IElementType INDENT = new SmartyTokenType("indent");
   IElementType INSERT = new SmartyTokenType("insert");
   IElementType LBRACKET = new SmartyTokenType("[");
-  IElementType LCOMMENT_END = new SmartyTokenType("*}");
-  IElementType LCOMMENT_START = new SmartyTokenType("{*");
   IElementType LDELIM = new SmartyTokenType("{");
   IElementType LDELIM_KW = new SmartyTokenType("ldelim");
   IElementType LE = new SmartyTokenType("<=");
+  IElementType LE_KEYWORD = new SmartyTokenType("lte");
+  IElementType LITERAL_KW = new SmartyTokenType("literal");
   IElementType LOWER = new SmartyTokenType("lower");
   IElementType LPAREN = new SmartyTokenType("(");
   IElementType LT = new SmartyTokenType("<");
+  IElementType LT_KEYWORD = new SmartyTokenType("lt");
+  IElementType MATCHES = new SmartyTokenType("matches");
   IElementType METHOD_CALL = new SmartyTokenType("method_call");
   IElementType MINUS = new SmartyTokenType("-");
   IElementType MOD = new SmartyTokenType("%");
@@ -126,16 +130,18 @@ public interface SmartyTypes {
   IElementType MULT = new SmartyTokenType("*");
   IElementType NEQ = new SmartyTokenType("!=");
   IElementType NEQEQ = new SmartyTokenType("!==");
+  IElementType NEQ_KEYWORD = new SmartyTokenType("neq");
   IElementType NL2BR = new SmartyTokenType("nl2br");
   IElementType NOCACHE = new SmartyTokenType("nocache");
   IElementType NOT = new SmartyTokenType("!");
   IElementType NOT_KEYWORD = new SmartyTokenType("not");
+  IElementType NULL_LITERAL = new SmartyTokenType("null");
   IElementType NUMBER = new SmartyTokenType("NUMBER");
   IElementType OR = new SmartyTokenType("||");
   IElementType OR_KEYWORD = new SmartyTokenType("or");
   IElementType PIPE = new SmartyTokenType("|");
   IElementType PLUS = new SmartyTokenType("+");
-  IElementType PREPEND = new SmartyTokenType("PREPEND");
+  IElementType PREPEND = new SmartyTokenType("prepend");
   IElementType QUESTION = new SmartyTokenType("?");
   IElementType RBRACKET = new SmartyTokenType("]");
   IElementType RDELIM = new SmartyTokenType("}");
@@ -153,12 +159,15 @@ public interface SmartyTypes {
   IElementType STRIP = new SmartyTokenType("strip");
   IElementType STRIP_TAGS = new SmartyTokenType("strip_tags");
   IElementType SWITCH = new SmartyTokenType("switch");
+  IElementType TEXT = new SmartyTokenType("text");
   IElementType TO_CHARSET = new SmartyTokenType("to_charset");
+  IElementType TRUE = new SmartyTokenType("true");
   IElementType TRUNCATE = new SmartyTokenType("truncate");
   IElementType UNESCAPE = new SmartyTokenType("unescape");
   IElementType UPPER = new SmartyTokenType("upper");
   IElementType WHILE = new SmartyTokenType("while");
   IElementType WORDWRAP = new SmartyTokenType("wordwrap");
+  IElementType WS = new SmartyTokenType("ws");
 
   class Factory {
     public static PsiElement createElement(ASTNode node) {
@@ -271,8 +280,8 @@ public interface SmartyTypes {
       else if (type == SETFILTER_STATEMENT) {
         return new SetfilterStatementImpl(node);
       }
-      else if (type == SMARTY_COMMENT) {
-        return new SmartyCommentImpl(node);
+      else if (type == SMARTY_CLOSING_TAG) {
+        return new SmartyClosingTagImpl(node);
       }
       else if (type == SMARTY_FUNCTION_CALL) {
         return new SmartyFunctionCallImpl(node);

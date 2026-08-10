@@ -1,5 +1,6 @@
 package ch.erlebnisbank.smarty
 
+import ch.erlebnisbank.smarty.psi.SmartyTokenSets
 import ch.erlebnisbank.smarty.psi.SmartyTypes
 import com.intellij.lexer.Lexer
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors
@@ -68,6 +69,9 @@ class SmartySyntaxHighlighter : SyntaxHighlighterBase() {
     }
 
     override fun getTokenHighlights(p0: IElementType?): Array<TextAttributesKey> {
+        // Covers the symbolic and the textual spelling of every operator in one place.
+        if (p0 != null && SmartyTokenSets.OPERATORS.contains(p0)) return OPERATOR_KEYS
+
         return when (p0) {
             SmartyTypes.IF, SmartyTypes.ELSE, SmartyTypes.ELSEIF,
             SmartyTypes.FOR, SmartyTypes.FOREACH, SmartyTypes.FOREACHELSE, SmartyTypes.WHILE, SmartyTypes.SECTION, SmartyTypes.SECTIONELSE,
@@ -80,13 +84,10 @@ class SmartySyntaxHighlighter : SyntaxHighlighterBase() {
             SmartyTypes.LBRACKET, SmartyTypes.RBRACKET
                 -> BRACKET_KEYS
 
-            SmartyTypes.AS, SmartyTypes.AND, SmartyTypes.OR, SmartyTypes.NOT, SmartyTypes.EQ, SmartyTypes.NEQ, SmartyTypes.EQEQ,
-            SmartyTypes.NEQEQ, SmartyTypes.GT, SmartyTypes.LT, SmartyTypes.LE, SmartyTypes.GE, SmartyTypes.PLUS, SmartyTypes.MINUS,
-            SmartyTypes.DIV, SmartyTypes.MOD, SmartyTypes.MULT
-                -> OPERATOR_KEYS
+            SmartyTypes.AS -> OPERATOR_KEYS
 
             SmartyTypes.CONFIG_VARIABLE -> CONSTANT_KEYS
-            SmartyTypes.VARIABLE -> VARIABLE_KEYS
+            SmartyTypes.DOLLAR -> VARIABLE_KEYS
             SmartyTypes.COMMENT -> COMMENT_KEYS
             SmartyTypes.NUMBER -> NUMBERS_KEYS
             SmartyTypes.STRING -> STRING_KEYS

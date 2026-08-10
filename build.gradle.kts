@@ -18,6 +18,9 @@ dependencies {
         // Add plugin dependencies for compilation here, for example:
         // bundledPlugin("com.intellij.java")
         bundledPlugin("com.intellij.java")
+        // HTML support needs no entry here: com.intellij.modules.html ships inside the platform
+        // itself, and plugin.xml declares the dependency on it. There is no bundled plugin or
+        // module by that name to resolve - asking for one fails the configuration.
     }
 }
 

@@ -3,229 +3,204 @@ package ch.erlebnisbank.smarty.parser;
 
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.PsiBuilder.Marker;
-
 import static ch.erlebnisbank.smarty.psi.SmartyTypes.*;
-//import static ch.erlebnisbank.smarty.parser.SmartyParserUtil.*;
 import static com.intellij.lang.parser.GeneratedParserUtilBase.*;
-
 import com.intellij.psi.tree.IElementType;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.tree.TokenSet;
 import com.intellij.lang.PsiParser;
 import com.intellij.lang.LightPsiParser;
-//import com.intellij.lang.PsiBuilder.Error;
 
 @SuppressWarnings({"SimplifiableIfStatement", "UnusedAssignment"})
 public class SmartyParser implements PsiParser, LightPsiParser {
 
-  public ASTNode parse(IElementType t, PsiBuilder b) {
-    parseLight(t, b);
-    return b.getTreeBuilt();
+  public ASTNode parse(IElementType root_, PsiBuilder builder_) {
+    parseLight(root_, builder_);
+    return builder_.getTreeBuilt();
   }
 
-  public void parseLight(IElementType t, PsiBuilder b) {
-    boolean r;
-    b = adapt_builder_(t, b, this, null);
-    Marker m = enter_section_(b, 0, _COLLAPSE_, null);
-    r = parse_root_(t, b);
-    exit_section_(b, 0, m, t, r, true, TRUE_CONDITION);
+  public void parseLight(IElementType root_, PsiBuilder builder_) {
+    boolean result_;
+    builder_ = adapt_builder_(root_, builder_, this, null);
+    Marker marker_ = enter_section_(builder_, 0, _COLLAPSE_, null);
+    result_ = parse_root_(root_, builder_);
+    exit_section_(builder_, 0, marker_, root_, result_, true, TRUE_CONDITION);
   }
 
-  protected boolean parse_root_(IElementType t, PsiBuilder b) {
-    return parse_root_(t, b, 0);
+  protected boolean parse_root_(IElementType root_, PsiBuilder builder_) {
+    return parse_root_(root_, builder_, 0);
   }
 
-  static boolean parse_root_(IElementType t, PsiBuilder b, int l) {
-    return root_rule(b, l + 1);
+  static boolean parse_root_(IElementType root_, PsiBuilder builder_, int level_) {
+    return root_rule(builder_, level_ + 1);
   }
 
   /* ********************************************************** */
   // LBRACKET [array_element_list] RBRACKET
-  public static boolean ARRAY_LITERAL(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "ARRAY_LITERAL")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, ARRAY_LITERAL, "<array literal>");
-    r = consumeToken(b, LBRACKET);
-    p = r; // pin = 1
-    r = r && report_error_(b, ARRAY_LITERAL_1(b, l + 1));
-    r = p && consumeToken(b, RBRACKET) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean ARRAY_LITERAL(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "ARRAY_LITERAL")) return false;
+    if (!nextTokenIs(builder_, LBRACKET)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, LBRACKET);
+    result_ = result_ && ARRAY_LITERAL_1(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, RBRACKET);
+    exit_section_(builder_, marker_, ARRAY_LITERAL, result_);
+    return result_;
   }
 
   // [array_element_list]
-  private static boolean ARRAY_LITERAL_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "ARRAY_LITERAL_1")) return false;
-    array_element_list(b, l + 1);
+  private static boolean ARRAY_LITERAL_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "ARRAY_LITERAL_1")) return false;
+    array_element_list(builder_, level_ + 1);
     return true;
   }
 
   /* ********************************************************** */
-  // 'true' | 'false' | 'yes' | 'no' | 'on' | 'off'
-  static boolean BOOLEAN(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "BOOLEAN")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, "true");
-    if (!r) r = consumeToken(b, "false");
-    if (!r) r = consumeToken(b, "yes");
-    if (!r) r = consumeToken(b, "no");
-    if (!r) r = consumeToken(b, "on");
-    if (!r) r = consumeToken(b, "off");
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  // TRUE | FALSE
+  static boolean BOOLEAN(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "BOOLEAN")) return false;
+    if (!nextTokenIs(builder_, "", FALSE, TRUE)) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, TRUE);
+    if (!result_) result_ = consumeToken(builder_, FALSE);
+    return result_;
   }
 
   /* ********************************************************** */
   // (IDENTIFIER | variable) (',' (IDENTIFIER | variable))*
-  static boolean DEBUG_VARS(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "DEBUG_VARS")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = DEBUG_VARS_0(b, l + 1);
-    p = r; // pin = 1
-    r = r && DEBUG_VARS_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean DEBUG_VARS(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "DEBUG_VARS")) return false;
+    if (!nextTokenIs(builder_, "", DOLLAR, IDENTIFIER)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = DEBUG_VARS_0(builder_, level_ + 1);
+    result_ = result_ && DEBUG_VARS_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // IDENTIFIER | variable
-  private static boolean DEBUG_VARS_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "DEBUG_VARS_0")) return false;
-    boolean r;
-    Marker m = enter_section_(b);
-    r = consumeToken(b, IDENTIFIER);
-    if (!r) r = variable(b, l + 1);
-    exit_section_(b, m, null, r);
-    return r;
+  private static boolean DEBUG_VARS_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "DEBUG_VARS_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, IDENTIFIER);
+    if (!result_) result_ = variable(builder_, level_ + 1);
+    return result_;
   }
 
   // (',' (IDENTIFIER | variable))*
-  private static boolean DEBUG_VARS_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "DEBUG_VARS_1")) return false;
+  private static boolean DEBUG_VARS_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "DEBUG_VARS_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!DEBUG_VARS_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "DEBUG_VARS_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!DEBUG_VARS_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "DEBUG_VARS_1", pos_)) break;
     }
     return true;
   }
 
   // ',' (IDENTIFIER | variable)
-  private static boolean DEBUG_VARS_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "DEBUG_VARS_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, COMMA);
-    p = r; // pin = 1
-    r = r && DEBUG_VARS_1_0_1(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean DEBUG_VARS_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "DEBUG_VARS_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, COMMA);
+    result_ = result_ && DEBUG_VARS_1_0_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // IDENTIFIER | variable
-  private static boolean DEBUG_VARS_1_0_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "DEBUG_VARS_1_0_1")) return false;
-    boolean r;
-    Marker m = enter_section_(b);
-    r = consumeToken(b, IDENTIFIER);
-    if (!r) r = variable(b, l + 1);
-    exit_section_(b, m, null, r);
-    return r;
+  private static boolean DEBUG_VARS_1_0_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "DEBUG_VARS_1_0_1")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, IDENTIFIER);
+    if (!result_) result_ = variable(builder_, level_ + 1);
+    return result_;
   }
 
   /* ********************************************************** */
   // LPAREN param_list RPAREN
-  static boolean FUNCTION_PARAMS(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "FUNCTION_PARAMS")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, LPAREN);
-    p = r; // pin = 1
-    r = r && report_error_(b, param_list(b, l + 1));
-    r = p && consumeToken(b, RPAREN) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
-  }
-
-  /* ********************************************************** */
-  // 'null'
-  static boolean NULL_LITERAL(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "NULL_LITERAL")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, "null");
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean FUNCTION_PARAMS(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "FUNCTION_PARAMS")) return false;
+    if (!nextTokenIs(builder_, LPAREN)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, LPAREN);
+    result_ = result_ && param_list(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, RPAREN);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // multiplicative_expr ((PLUS | MINUS) multiplicative_expr)*
-  static boolean additive_expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "additive_expr")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, null, "<expression>");
-    r = multiplicative_expr(b, l + 1);
-    p = r; // pin = 1
-    r = r && additive_expr_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean additive_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "additive_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = multiplicative_expr(builder_, level_ + 1);
+    result_ = result_ && additive_expr_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // ((PLUS | MINUS) multiplicative_expr)*
-  private static boolean additive_expr_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "additive_expr_1")) return false;
+  private static boolean additive_expr_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "additive_expr_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!additive_expr_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "additive_expr_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!additive_expr_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "additive_expr_1", pos_)) break;
     }
     return true;
   }
 
   // (PLUS | MINUS) multiplicative_expr
-  private static boolean additive_expr_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "additive_expr_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = additive_expr_1_0_0(b, l + 1);
-    p = r; // pin = 1
-    r = r && multiplicative_expr(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean additive_expr_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "additive_expr_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = additive_expr_1_0_0(builder_, level_ + 1);
+    result_ = result_ && multiplicative_expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // PLUS | MINUS
-  private static boolean additive_expr_1_0_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "additive_expr_1_0_0")) return false;
-    boolean r;
-    r = consumeToken(b, PLUS);
-    if (!r) r = consumeToken(b, MINUS);
-    return r;
+  private static boolean additive_expr_1_0_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "additive_expr_1_0_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, PLUS);
+    if (!result_) result_ = consumeToken(builder_, MINUS);
+    return result_;
   }
 
   /* ********************************************************** */
   // APPEND variable '=' expr assign_clause*
-  public static boolean append_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "append_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, APPEND_STATEMENT, "<append statement>");
-    r = consumeToken(b, APPEND);
-    p = r; // pin = 1
-    r = r && report_error_(b, variable(b, l + 1));
-    r = p && report_error_(b, consumeToken(b, ASSIGN)) && r;
-    r = p && report_error_(b, expr(b, l + 1)) && r;
-    r = p && append_statement_4(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean append_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "append_statement")) return false;
+    if (!nextTokenIs(builder_, "<append statement>", APPEND)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, APPEND_STATEMENT, "<append statement>");
+    result_ = consumeToken(builder_, APPEND);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, variable(builder_, level_ + 1));
+    result_ = pinned_ && report_error_(builder_, consumeToken(builder_, ASSIGN)) && result_;
+    result_ = pinned_ && report_error_(builder_, expr(builder_, level_ + 1)) && result_;
+    result_ = pinned_ && append_statement_4(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // assign_clause*
-  private static boolean append_statement_4(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "append_statement_4")) return false;
+  private static boolean append_statement_4(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "append_statement_4")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!assign_clause(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "append_statement_4", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "append_statement_4", pos_)) break;
     }
     return true;
   }
@@ -233,173 +208,166 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   /* ********************************************************** */
   // named_argument (',' named_argument)*
   //     | positional_argument (',' positional_argument)*
-  public static boolean argument_list(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "argument_list")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, ARGUMENT_LIST, "<argument list>");
-    r = argument_list_0(b, l + 1);
-    if (!r) r = argument_list_1(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  public static boolean argument_list(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "argument_list")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, ARGUMENT_LIST, "<argument list>");
+    result_ = argument_list_0(builder_, level_ + 1);
+    if (!result_) result_ = argument_list_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // named_argument (',' named_argument)*
-  private static boolean argument_list_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "argument_list_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = named_argument(b, l + 1);
-    p = r; // pin = 1
-    r = r && argument_list_0_1(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean argument_list_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "argument_list_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = named_argument(builder_, level_ + 1);
+    result_ = result_ && argument_list_0_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // (',' named_argument)*
-  private static boolean argument_list_0_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "argument_list_0_1")) return false;
+  private static boolean argument_list_0_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "argument_list_0_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!argument_list_0_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "argument_list_0_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!argument_list_0_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "argument_list_0_1", pos_)) break;
     }
     return true;
   }
 
   // ',' named_argument
-  private static boolean argument_list_0_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "argument_list_0_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, COMMA);
-    p = r; // pin = 1
-    r = r && named_argument(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean argument_list_0_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "argument_list_0_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, COMMA);
+    result_ = result_ && named_argument(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // positional_argument (',' positional_argument)*
-  private static boolean argument_list_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "argument_list_1")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = positional_argument(b, l + 1);
-    p = r; // pin = 1
-    r = r && argument_list_1_1(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean argument_list_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "argument_list_1")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = positional_argument(builder_, level_ + 1);
+    result_ = result_ && argument_list_1_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // (',' positional_argument)*
-  private static boolean argument_list_1_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "argument_list_1_1")) return false;
+  private static boolean argument_list_1_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "argument_list_1_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!argument_list_1_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "argument_list_1_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!argument_list_1_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "argument_list_1_1", pos_)) break;
     }
     return true;
   }
 
   // ',' positional_argument
-  private static boolean argument_list_1_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "argument_list_1_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, COMMA);
-    p = r; // pin = 1
-    r = r && positional_argument(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean argument_list_1_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "argument_list_1_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, COMMA);
+    result_ = result_ && positional_argument(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // LBRACKET array_index RBRACKET
-  public static boolean array_access(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "array_access")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, ARRAY_ACCESS, "<array access>");
-    r = consumeToken(b, LBRACKET);
-    p = r; // pin = 1
-    r = r && report_error_(b, array_index(b, l + 1));
-    r = p && consumeToken(b, RBRACKET) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean array_access(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "array_access")) return false;
+    if (!nextTokenIs(builder_, LBRACKET)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, LBRACKET);
+    result_ = result_ && array_index(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, RBRACKET);
+    exit_section_(builder_, marker_, ARRAY_ACCESS, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // (expr '=>')? expr
-  static boolean array_element(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "array_element")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = array_element_0(b, l + 1);
-    p = r; // pin = 1
-    r = r && expr(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean array_element(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "array_element")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = array_element_0(builder_, level_ + 1);
+    result_ = result_ && expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // (expr '=>')?
-  private static boolean array_element_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "array_element_0")) return false;
-    array_element_0_0(b, l + 1);
+  private static boolean array_element_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "array_element_0")) return false;
+    array_element_0_0(builder_, level_ + 1);
     return true;
   }
 
   // expr '=>'
-  private static boolean array_element_0_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "array_element_0_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = expr(b, l + 1);
-    p = r; // pin = 1
-    r = r && consumeToken(b, "=>");
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean array_element_0_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "array_element_0_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = expr(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, FAT_ARROW);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // array_element (',' array_element)* [COMMA]
-  static boolean array_element_list(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "array_element_list")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = array_element(b, l + 1);
-    p = r; // pin = 1
-    r = r && report_error_(b, array_element_list_1(b, l + 1));
-    r = p && array_element_list_2(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean array_element_list(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "array_element_list")) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_);
+    result_ = array_element(builder_, level_ + 1);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, array_element_list_1(builder_, level_ + 1));
+    result_ = pinned_ && array_element_list_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // (',' array_element)*
-  private static boolean array_element_list_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "array_element_list_1")) return false;
+  private static boolean array_element_list_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "array_element_list_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!array_element_list_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "array_element_list_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!array_element_list_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "array_element_list_1", pos_)) break;
     }
     return true;
   }
 
   // ',' array_element
-  private static boolean array_element_list_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "array_element_list_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, COMMA);
-    p = r; // pin = 1
-    r = r && array_element(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean array_element_list_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "array_element_list_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, COMMA);
+    result_ = result_ && array_element(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // [COMMA]
-  private static boolean array_element_list_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "array_element_list_2")) return false;
-    consumeToken(b, COMMA);
+  private static boolean array_element_list_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "array_element_list_2")) return false;
+    consumeToken(builder_, COMMA);
     return true;
   }
 
@@ -407,558 +375,657 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   // expr
   //     | IDENTIFIER
   //     | NUMBER
-  static boolean array_index(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "array_index")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = expr(b, l + 1);
-    if (!r) r = consumeToken(b, IDENTIFIER);
-    if (!r) r = consumeToken(b, NUMBER);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean array_index(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "array_index")) return false;
+    boolean result_;
+    result_ = expr(builder_, level_ + 1);
+    if (!result_) result_ = consumeToken(builder_, IDENTIFIER);
+    if (!result_) result_ = consumeToken(builder_, NUMBER);
+    return result_;
   }
 
   /* ********************************************************** */
   // IDENTIFIER '=' expr
-  static boolean assign_clause(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "assign_clause")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeTokens(b, 1, IDENTIFIER, ASSIGN);
-    p = r; // pin = 1
-    r = r && expr(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean assign_clause(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assign_clause")) return false;
+    if (!nextTokenIs(builder_, IDENTIFIER)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeTokens(builder_, 0, IDENTIFIER, ASSIGN);
+    result_ = result_ && expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // assign_clause (',' assign_clause)*
-  static boolean assign_list(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "assign_list")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = assign_clause(b, l + 1);
-    p = r; // pin = 1
-    r = r && assign_list_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean assign_list(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assign_list")) return false;
+    if (!nextTokenIs(builder_, IDENTIFIER)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_);
+    result_ = assign_clause(builder_, level_ + 1);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && assign_list_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // (',' assign_clause)*
-  private static boolean assign_list_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "assign_list_1")) return false;
+  private static boolean assign_list_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assign_list_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!assign_list_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "assign_list_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!assign_list_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "assign_list_1", pos_)) break;
     }
     return true;
   }
 
   // ',' assign_clause
-  private static boolean assign_list_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "assign_list_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, COMMA);
-    p = r; // pin = 1
-    r = r && assign_clause(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean assign_list_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assign_list_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, COMMA);
+    result_ = result_ && assign_clause(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // ASSIGN_KW variable '=' expr assign_clause*
-  public static boolean assign_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "assign_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, ASSIGN_STATEMENT, "<assign statement>");
-    r = consumeToken(b, ASSIGN_KW);
-    p = r; // pin = 1
-    r = r && report_error_(b, variable(b, l + 1));
-    r = p && report_error_(b, consumeToken(b, ASSIGN)) && r;
-    r = p && report_error_(b, expr(b, l + 1)) && r;
-    r = p && assign_statement_4(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean assign_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assign_statement")) return false;
+    if (!nextTokenIs(builder_, "<assign statement>", ASSIGN_KW)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, ASSIGN_STATEMENT, "<assign statement>");
+    result_ = consumeToken(builder_, ASSIGN_KW);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, variable(builder_, level_ + 1));
+    result_ = pinned_ && report_error_(builder_, consumeToken(builder_, ASSIGN)) && result_;
+    result_ = pinned_ && report_error_(builder_, expr(builder_, level_ + 1)) && result_;
+    result_ = pinned_ && assign_statement_4(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // assign_clause*
-  private static boolean assign_statement_4(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "assign_statement_4")) return false;
+  private static boolean assign_statement_4(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assign_statement_4")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!assign_clause(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "assign_statement_4", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "assign_statement_4", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
   // variable ASSIGN expr
-  static boolean assignment(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "assignment")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = variable(b, l + 1);
-    p = r; // pin = 1
-    r = r && report_error_(b, consumeToken(b, ASSIGN));
-    r = p && expr(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean assignment(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assignment")) return false;
+    if (!nextTokenIs(builder_, DOLLAR)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = variable(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, ASSIGN);
+    result_ = result_ && expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
-  // BLOCK IDENTIFIER [APPEND | PREPEND]
-  public static boolean block_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "block_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, BLOCK_STATEMENT, "<block statement>");
-    r = consumeTokens(b, 1, BLOCK, IDENTIFIER);
-    p = r; // pin = 1
-    r = r && block_statement_2(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // BLOCK declaration_name [APPEND | PREPEND] assign_clause*
+  public static boolean block_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "block_statement")) return false;
+    if (!nextTokenIs(builder_, BLOCK)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, BLOCK_STATEMENT, null);
+    result_ = consumeToken(builder_, BLOCK);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, declaration_name(builder_, level_ + 1));
+    result_ = pinned_ && report_error_(builder_, block_statement_2(builder_, level_ + 1)) && result_;
+    result_ = pinned_ && block_statement_3(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // [APPEND | PREPEND]
-  private static boolean block_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "block_statement_2")) return false;
-    block_statement_2_0(b, l + 1);
+  private static boolean block_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "block_statement_2")) return false;
+    block_statement_2_0(builder_, level_ + 1);
     return true;
   }
 
   // APPEND | PREPEND
-  private static boolean block_statement_2_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "block_statement_2_0")) return false;
-    boolean r;
-    r = consumeToken(b, APPEND);
-    if (!r) r = consumeToken(b, PREPEND);
-    return r;
+  private static boolean block_statement_2_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "block_statement_2_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, APPEND);
+    if (!result_) result_ = consumeToken(builder_, PREPEND);
+    return result_;
+  }
+
+  // assign_clause*
+  private static boolean block_statement_3(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "block_statement_3")) return false;
+    while (true) {
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "block_statement_3", pos_)) break;
+    }
+    return true;
   }
 
   /* ********************************************************** */
   // BREAK [NUMBER]
-  public static boolean break_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "break_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, BREAK_STATEMENT, "<break statement>");
-    r = consumeToken(b, BREAK);
-    p = r; // pin = 1
-    r = r && break_statement_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean break_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "break_statement")) return false;
+    if (!nextTokenIs(builder_, BREAK)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, BREAK);
+    result_ = result_ && break_statement_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, BREAK_STATEMENT, result_);
+    return result_;
   }
 
   // [NUMBER]
-  private static boolean break_statement_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "break_statement_1")) return false;
-    consumeToken(b, NUMBER);
+  private static boolean break_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "break_statement_1")) return false;
+    consumeToken(builder_, NUMBER);
     return true;
   }
 
   /* ********************************************************** */
   // LPAREN [assign_list] RPAREN
-  static boolean call_arguments(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "call_arguments")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, LPAREN);
-    p = r; // pin = 1
-    r = r && report_error_(b, call_arguments_1(b, l + 1));
-    r = p && consumeToken(b, RPAREN) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean call_arguments(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "call_arguments")) return false;
+    if (!nextTokenIs(builder_, LPAREN)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, LPAREN);
+    result_ = result_ && call_arguments_1(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, RPAREN);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // [assign_list]
-  private static boolean call_arguments_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "call_arguments_1")) return false;
-    assign_list(b, l + 1);
+  private static boolean call_arguments_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "call_arguments_1")) return false;
+    assign_list(builder_, level_ + 1);
     return true;
   }
 
   /* ********************************************************** */
   // CALL template_reference [call_arguments]
-  public static boolean call_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "call_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, CALL_STATEMENT, "<call statement>");
-    r = consumeToken(b, CALL);
-    p = r; // pin = 1
-    r = r && report_error_(b, template_reference(b, l + 1));
-    r = p && call_statement_2(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean call_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "call_statement")) return false;
+    if (!nextTokenIs(builder_, CALL)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, CALL_STATEMENT, null);
+    result_ = consumeToken(builder_, CALL);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, template_reference(builder_, level_ + 1));
+    result_ = pinned_ && call_statement_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // [call_arguments]
-  private static boolean call_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "call_statement_2")) return false;
-    call_arguments(b, l + 1);
+  private static boolean call_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "call_statement_2")) return false;
+    call_arguments(builder_, level_ + 1);
     return true;
   }
 
   /* ********************************************************** */
   // CAPTURE variable assign_clause*
-  public static boolean capture_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "capture_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, CAPTURE_STATEMENT, "<capture statement>");
-    r = consumeToken(b, CAPTURE);
-    p = r; // pin = 1
-    r = r && report_error_(b, variable(b, l + 1));
-    r = p && capture_statement_2(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean capture_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "capture_statement")) return false;
+    if (!nextTokenIs(builder_, "<capture statement>", CAPTURE)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, CAPTURE_STATEMENT, "<capture statement>");
+    result_ = consumeToken(builder_, CAPTURE);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, variable(builder_, level_ + 1));
+    result_ = pinned_ && capture_statement_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // assign_clause*
-  private static boolean capture_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "capture_statement_2")) return false;
+  private static boolean capture_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "capture_statement_2")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!assign_clause(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "capture_statement_2", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "capture_statement_2", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
   // CASE case_value
-  public static boolean case_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "case_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, CASE_STATEMENT, "<case statement>");
-    r = consumeToken(b, CASE);
-    p = r; // pin = 1
-    r = r && case_value(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean case_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "case_statement")) return false;
+    if (!nextTokenIs(builder_, CASE)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, CASE_STATEMENT, null);
+    result_ = consumeToken(builder_, CASE);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && case_value(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   /* ********************************************************** */
   // expr | DEFAULT
-  static boolean case_value(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "case_value")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = expr(b, l + 1);
-    if (!r) r = consumeToken(b, DEFAULT);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean case_value(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "case_value")) return false;
+    boolean result_;
+    result_ = expr(builder_, level_ + 1);
+    if (!result_) result_ = consumeToken(builder_, DEFAULT);
+    return result_;
   }
 
   /* ********************************************************** */
-  // !(LCOMMENT_END) .
-  static boolean comment_content(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "comment_content")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NOT_);
-    r = !consumeToken(b, LCOMMENT_END);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  // IF | FOREACH | FOR | WHILE | SECTION | SWITCH | BLOCK | FUNCTION
+  //     | CAPTURE | STRIP | SETFILTER | NOCACHE | LITERAL_KW
+  static boolean closing_keyword(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "closing_keyword")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, IF);
+    if (!result_) result_ = consumeToken(builder_, FOREACH);
+    if (!result_) result_ = consumeToken(builder_, FOR);
+    if (!result_) result_ = consumeToken(builder_, WHILE);
+    if (!result_) result_ = consumeToken(builder_, SECTION);
+    if (!result_) result_ = consumeToken(builder_, SWITCH);
+    if (!result_) result_ = consumeToken(builder_, BLOCK);
+    if (!result_) result_ = consumeToken(builder_, FUNCTION);
+    if (!result_) result_ = consumeToken(builder_, CAPTURE);
+    if (!result_) result_ = consumeToken(builder_, STRIP);
+    if (!result_) result_ = consumeToken(builder_, SETFILTER);
+    if (!result_) result_ = consumeToken(builder_, NOCACHE);
+    if (!result_) result_ = consumeToken(builder_, LITERAL_KW);
+    return result_;
   }
 
   /* ********************************************************** */
-  // additive_expr ((EQ | NEQ | EQEQ | NEQEQ | LT | GT | LE | GE) additive_expr)*
-  static boolean comparison_expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "comparison_expr")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, null, "<expression>");
-    r = additive_expr(b, l + 1);
-    p = r; // pin = 1
-    r = r && comparison_expr_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // additive_expr (comparison_operator additive_expr)*
+  static boolean comparison_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "comparison_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = additive_expr(builder_, level_ + 1);
+    result_ = result_ && comparison_expr_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
-  // ((EQ | NEQ | EQEQ | NEQEQ | LT | GT | LE | GE) additive_expr)*
-  private static boolean comparison_expr_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "comparison_expr_1")) return false;
+  // (comparison_operator additive_expr)*
+  private static boolean comparison_expr_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "comparison_expr_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!comparison_expr_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "comparison_expr_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!comparison_expr_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "comparison_expr_1", pos_)) break;
     }
     return true;
   }
 
-  // (EQ | NEQ | EQEQ | NEQEQ | LT | GT | LE | GE) additive_expr
-  private static boolean comparison_expr_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "comparison_expr_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = comparison_expr_1_0_0(b, l + 1);
-    p = r; // pin = 1
-    r = r && additive_expr(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
-  }
-
-  // EQ | NEQ | EQEQ | NEQEQ | LT | GT | LE | GE
-  private static boolean comparison_expr_1_0_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "comparison_expr_1_0_0")) return false;
-    boolean r;
-    r = consumeToken(b, EQ);
-    if (!r) r = consumeToken(b, NEQ);
-    if (!r) r = consumeToken(b, EQEQ);
-    if (!r) r = consumeToken(b, NEQEQ);
-    if (!r) r = consumeToken(b, LT);
-    if (!r) r = consumeToken(b, GT);
-    if (!r) r = consumeToken(b, LE);
-    if (!r) r = consumeToken(b, GE);
-    return r;
+  // comparison_operator additive_expr
+  private static boolean comparison_expr_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "comparison_expr_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = comparison_operator(builder_, level_ + 1);
+    result_ = result_ && additive_expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
-  // CONFIG_LOAD STRING [assign_list]
-  public static boolean config_load_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "config_load_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, CONFIG_LOAD_STATEMENT, "<config load statement>");
-    r = consumeTokens(b, 1, CONFIG_LOAD, STRING);
-    p = r; // pin = 1
-    r = r && config_load_statement_2(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // EQ | NEQ | EQEQ | NEQEQ | LT | GT | LE | GE
+  //     | EQ_KEYWORD | NEQ_KEYWORD | LT_KEYWORD | GT_KEYWORD | LE_KEYWORD | GE_KEYWORD
+  //     | MATCHES
+  static boolean comparison_operator(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "comparison_operator")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, EQ);
+    if (!result_) result_ = consumeToken(builder_, NEQ);
+    if (!result_) result_ = consumeToken(builder_, EQEQ);
+    if (!result_) result_ = consumeToken(builder_, NEQEQ);
+    if (!result_) result_ = consumeToken(builder_, LT);
+    if (!result_) result_ = consumeToken(builder_, GT);
+    if (!result_) result_ = consumeToken(builder_, LE);
+    if (!result_) result_ = consumeToken(builder_, GE);
+    if (!result_) result_ = consumeToken(builder_, EQ_KEYWORD);
+    if (!result_) result_ = consumeToken(builder_, NEQ_KEYWORD);
+    if (!result_) result_ = consumeToken(builder_, LT_KEYWORD);
+    if (!result_) result_ = consumeToken(builder_, GT_KEYWORD);
+    if (!result_) result_ = consumeToken(builder_, LE_KEYWORD);
+    if (!result_) result_ = consumeToken(builder_, GE_KEYWORD);
+    if (!result_) result_ = consumeToken(builder_, MATCHES);
+    return result_;
   }
 
-  // [assign_list]
-  private static boolean config_load_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "config_load_statement_2")) return false;
-    assign_list(b, l + 1);
+  /* ********************************************************** */
+  // CONFIG_LOAD [STRING] assign_clause*
+  public static boolean config_load_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "config_load_statement")) return false;
+    if (!nextTokenIs(builder_, CONFIG_LOAD)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, CONFIG_LOAD_STATEMENT, null);
+    result_ = consumeToken(builder_, CONFIG_LOAD);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, config_load_statement_1(builder_, level_ + 1));
+    result_ = pinned_ && config_load_statement_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
+  }
+
+  // [STRING]
+  private static boolean config_load_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "config_load_statement_1")) return false;
+    consumeToken(builder_, STRING);
+    return true;
+  }
+
+  // assign_clause*
+  private static boolean config_load_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "config_load_statement_2")) return false;
+    while (true) {
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "config_load_statement_2", pos_)) break;
+    }
     return true;
   }
 
   /* ********************************************************** */
   // AT IDENTIFIER
-  public static boolean config_variable(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "config_variable")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, CONFIG_VARIABLE, "<config variable>");
-    r = consumeTokens(b, 1, AT, IDENTIFIER);
-    p = r; // pin = 1
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean config_variable(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "config_variable")) return false;
+    if (!nextTokenIs(builder_, AT)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeTokens(builder_, 0, AT, IDENTIFIER);
+    exit_section_(builder_, marker_, CONFIG_VARIABLE, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // CONTINUE [NUMBER]
-  public static boolean continue_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "continue_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, CONTINUE_STATEMENT, "<continue statement>");
-    r = consumeToken(b, CONTINUE);
-    p = r; // pin = 1
-    r = r && continue_statement_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean continue_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "continue_statement")) return false;
+    if (!nextTokenIs(builder_, CONTINUE)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, CONTINUE);
+    result_ = result_ && continue_statement_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, CONTINUE_STATEMENT, result_);
+    return result_;
   }
 
   // [NUMBER]
-  private static boolean continue_statement_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "continue_statement_1")) return false;
-    consumeToken(b, NUMBER);
+  private static boolean continue_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "continue_statement_1")) return false;
+    consumeToken(builder_, NUMBER);
     return true;
   }
 
   /* ********************************************************** */
   // DEBUG [DEBUG_VARS]
-  public static boolean debug_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "debug_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, DEBUG_STATEMENT, "<debug statement>");
-    r = consumeToken(b, DEBUG);
-    p = r; // pin = 1
-    r = r && debug_statement_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean debug_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "debug_statement")) return false;
+    if (!nextTokenIs(builder_, DEBUG)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, DEBUG_STATEMENT, null);
+    result_ = consumeToken(builder_, DEBUG);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && debug_statement_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // [DEBUG_VARS]
-  private static boolean debug_statement_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "debug_statement_1")) return false;
-    DEBUG_VARS(b, l + 1);
+  private static boolean debug_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "debug_statement_1")) return false;
+    DEBUG_VARS(builder_, level_ + 1);
     return true;
   }
 
   /* ********************************************************** */
+  // (IDENTIFIER '=' name_value) | name_value
+  static boolean declaration_name(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "declaration_name")) return false;
+    if (!nextTokenIs(builder_, "", IDENTIFIER, STRING)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = declaration_name_0(builder_, level_ + 1);
+    if (!result_) result_ = name_value(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // IDENTIFIER '=' name_value
+  private static boolean declaration_name_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "declaration_name_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeTokens(builder_, 0, IDENTIFIER, ASSIGN);
+    result_ = result_ && name_value(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  /* ********************************************************** */
   // ELSE
-  public static boolean else_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "else_statement")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, ELSE_STATEMENT, "<else statement>");
-    r = consumeToken(b, ELSE);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  public static boolean else_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "else_statement")) return false;
+    if (!nextTokenIs(builder_, ELSE)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, ELSE);
+    exit_section_(builder_, marker_, ELSE_STATEMENT, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // ELSEIF expr assign_clause*
-  public static boolean elseif_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "elseif_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, ELSEIF_STATEMENT, "<elseif statement>");
-    r = consumeToken(b, ELSEIF);
-    p = r; // pin = 1
-    r = r && report_error_(b, expr(b, l + 1));
-    r = p && elseif_statement_2(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean elseif_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "elseif_statement")) return false;
+    if (!nextTokenIs(builder_, ELSEIF)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, ELSEIF_STATEMENT, null);
+    result_ = consumeToken(builder_, ELSEIF);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, expr(builder_, level_ + 1));
+    result_ = pinned_ && elseif_statement_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // assign_clause*
-  private static boolean elseif_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "elseif_statement_2")) return false;
+  private static boolean elseif_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "elseif_statement_2")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!assign_clause(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "elseif_statement_2", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "elseif_statement_2", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
   // ternary_expr
-  public static boolean expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "expr")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _COLLAPSE_, EXPR, "<expr>");
-    r = ternary_expr(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  public static boolean expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _COLLAPSE_, EXPR, "<expr>");
+    result_ = ternary_expr(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   /* ********************************************************** */
-  // EXTENDS STRING [assign_list]
-  public static boolean extends_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "extends_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, EXTENDS_STATEMENT, "<extends statement>");
-    r = consumeTokens(b, 1, EXTENDS, STRING);
-    p = r; // pin = 1
-    r = r && extends_statement_2(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // EXTENDS [STRING] assign_clause*
+  public static boolean extends_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "extends_statement")) return false;
+    if (!nextTokenIs(builder_, EXTENDS)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, EXTENDS_STATEMENT, null);
+    result_ = consumeToken(builder_, EXTENDS);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, extends_statement_1(builder_, level_ + 1));
+    result_ = pinned_ && extends_statement_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
-  // [assign_list]
-  private static boolean extends_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "extends_statement_2")) return false;
-    assign_list(b, l + 1);
+  // [STRING]
+  private static boolean extends_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "extends_statement_1")) return false;
+    consumeToken(builder_, STRING);
+    return true;
+  }
+
+  // assign_clause*
+  private static boolean extends_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "extends_statement_2")) return false;
+    while (true) {
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "extends_statement_2", pos_)) break;
+    }
     return true;
   }
 
   /* ********************************************************** */
   // expr
-  static boolean for_condition(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "for_condition")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = expr(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean for_condition(PsiBuilder builder_, int level_) {
+    return expr(builder_, level_ + 1);
   }
 
   /* ********************************************************** */
   // assignment
-  static boolean for_increment(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "for_increment")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = assignment(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean for_increment(PsiBuilder builder_, int level_) {
+    return assignment(builder_, level_ + 1);
   }
 
   /* ********************************************************** */
   // assignment
-  static boolean for_init(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "for_init")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = assignment(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean for_init(PsiBuilder builder_, int level_) {
+    return assignment(builder_, level_ + 1);
   }
 
   /* ********************************************************** */
   // FOR for_init ';' for_condition ';' for_increment assign_clause*
-  public static boolean for_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "for_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, FOR_STATEMENT, "<for loop>");
-    r = consumeToken(b, FOR);
-    p = r; // pin = 1
-    r = r && report_error_(b, for_init(b, l + 1));
-    r = p && report_error_(b, consumeToken(b, SEMICOLON)) && r;
-    r = p && report_error_(b, for_condition(b, l + 1)) && r;
-    r = p && report_error_(b, consumeToken(b, SEMICOLON)) && r;
-    r = p && report_error_(b, for_increment(b, l + 1)) && r;
-    r = p && for_statement_6(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean for_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "for_statement")) return false;
+    if (!nextTokenIs(builder_, "<for loop>", FOR)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, FOR_STATEMENT, "<for loop>");
+    result_ = consumeToken(builder_, FOR);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, for_init(builder_, level_ + 1));
+    result_ = pinned_ && report_error_(builder_, consumeToken(builder_, SEMICOLON)) && result_;
+    result_ = pinned_ && report_error_(builder_, for_condition(builder_, level_ + 1)) && result_;
+    result_ = pinned_ && report_error_(builder_, consumeToken(builder_, SEMICOLON)) && result_;
+    result_ = pinned_ && report_error_(builder_, for_increment(builder_, level_ + 1)) && result_;
+    result_ = pinned_ && for_statement_6(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // assign_clause*
-  private static boolean for_statement_6(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "for_statement_6")) return false;
+  private static boolean for_statement_6(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "for_statement_6")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!assign_clause(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "for_statement_6", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "for_statement_6", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
-  // FOREACH expression AS dollar_var assign_clause* '}' template_item* '{' '/' FOREACH
-  public static boolean foreach_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "foreach_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, FOREACH_STATEMENT, "<foreach loop>");
-    r = consumeTokens(b, 1, FOREACH, EXPRESSION, AS, DOLLAR_VAR);
-    p = r; // pin = 1
-    r = r && report_error_(b, foreach_statement_4(b, l + 1));
-    r = p && report_error_(b, consumeToken(b, RDELIM)) && r;
-    r = p && report_error_(b, foreach_statement_6(b, l + 1)) && r;
-    r = p && report_error_(b, consumeTokens(b, -1, LDELIM, DIV, FOREACH)) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // FOREACH [expr AS variable [FAT_ARROW variable]] assign_clause*
+  public static boolean foreach_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "foreach_statement")) return false;
+    if (!nextTokenIs(builder_, "<foreach loop>", FOREACH)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, FOREACH_STATEMENT, "<foreach loop>");
+    result_ = consumeToken(builder_, FOREACH);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, foreach_statement_1(builder_, level_ + 1));
+    result_ = pinned_ && foreach_statement_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
-  // assign_clause*
-  private static boolean foreach_statement_4(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "foreach_statement_4")) return false;
-    while (true) {
-      int c = current_position_(b);
-      if (!assign_clause(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "foreach_statement_4", c)) break;
-    }
+  // [expr AS variable [FAT_ARROW variable]]
+  private static boolean foreach_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "foreach_statement_1")) return false;
+    foreach_statement_1_0(builder_, level_ + 1);
     return true;
   }
 
-  // template_item*
-  private static boolean foreach_statement_6(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "foreach_statement_6")) return false;
+  // expr AS variable [FAT_ARROW variable]
+  private static boolean foreach_statement_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "foreach_statement_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = expr(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, AS);
+    result_ = result_ && variable(builder_, level_ + 1);
+    result_ = result_ && foreach_statement_1_0_3(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // [FAT_ARROW variable]
+  private static boolean foreach_statement_1_0_3(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "foreach_statement_1_0_3")) return false;
+    foreach_statement_1_0_3_0(builder_, level_ + 1);
+    return true;
+  }
+
+  // FAT_ARROW variable
+  private static boolean foreach_statement_1_0_3_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "foreach_statement_1_0_3_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, FAT_ARROW);
+    result_ = result_ && variable(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // assign_clause*
+  private static boolean foreach_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "foreach_statement_2")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!template_item(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "foreach_statement_6", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "foreach_statement_2", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
   // FOREACHELSE
-  public static boolean foreachelse_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "foreachelse_statement")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, FOREACHELSE_STATEMENT, "<foreachelse statement>");
-    r = consumeToken(b, FOREACHELSE);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  public static boolean foreachelse_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "foreachelse_statement")) return false;
+    if (!nextTokenIs(builder_, FOREACHELSE)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, FOREACHELSE);
+    exit_section_(builder_, marker_, FOREACHELSE_STATEMENT, result_);
+    return result_;
   }
 
   /* ********************************************************** */
@@ -989,188 +1056,235 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   //     | setfilter_statement
   //     | ldelim_rdelim_statement
   //     | variable_output
-  public static boolean function_body(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "function_body")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, FUNCTION_BODY, "<function body>");
-    r = if_statement(b, l + 1);
-    if (!r) r = elseif_statement(b, l + 1);
-    if (!r) r = else_statement(b, l + 1);
-    if (!r) r = foreach_statement(b, l + 1);
-    if (!r) r = foreachelse_statement(b, l + 1);
-    if (!r) r = for_statement(b, l + 1);
-    if (!r) r = while_statement(b, l + 1);
-    if (!r) r = section_statement(b, l + 1);
-    if (!r) r = sectionelse_statement(b, l + 1);
-    if (!r) r = switch_statement(b, l + 1);
-    if (!r) r = case_statement(b, l + 1);
-    if (!r) r = break_statement(b, l + 1);
-    if (!r) r = continue_statement(b, l + 1);
-    if (!r) r = block_statement(b, l + 1);
-    if (!r) r = function_statement(b, l + 1);
-    if (!r) r = call_statement(b, l + 1);
-    if (!r) r = extends_statement(b, l + 1);
-    if (!r) r = include_statement(b, l + 1);
-    if (!r) r = insert_statement(b, l + 1);
-    if (!r) r = assign_statement(b, l + 1);
-    if (!r) r = append_statement(b, l + 1);
-    if (!r) r = capture_statement(b, l + 1);
-    if (!r) r = config_load_statement(b, l + 1);
-    if (!r) r = debug_statement(b, l + 1);
-    if (!r) r = setfilter_statement(b, l + 1);
-    if (!r) r = ldelim_rdelim_statement(b, l + 1);
-    if (!r) r = variable_output(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  public static boolean function_body(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "function_body")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, FUNCTION_BODY, "<function body>");
+    result_ = if_statement(builder_, level_ + 1);
+    if (!result_) result_ = elseif_statement(builder_, level_ + 1);
+    if (!result_) result_ = else_statement(builder_, level_ + 1);
+    if (!result_) result_ = foreach_statement(builder_, level_ + 1);
+    if (!result_) result_ = foreachelse_statement(builder_, level_ + 1);
+    if (!result_) result_ = for_statement(builder_, level_ + 1);
+    if (!result_) result_ = while_statement(builder_, level_ + 1);
+    if (!result_) result_ = section_statement(builder_, level_ + 1);
+    if (!result_) result_ = sectionelse_statement(builder_, level_ + 1);
+    if (!result_) result_ = switch_statement(builder_, level_ + 1);
+    if (!result_) result_ = case_statement(builder_, level_ + 1);
+    if (!result_) result_ = break_statement(builder_, level_ + 1);
+    if (!result_) result_ = continue_statement(builder_, level_ + 1);
+    if (!result_) result_ = block_statement(builder_, level_ + 1);
+    if (!result_) result_ = function_statement(builder_, level_ + 1);
+    if (!result_) result_ = call_statement(builder_, level_ + 1);
+    if (!result_) result_ = extends_statement(builder_, level_ + 1);
+    if (!result_) result_ = include_statement(builder_, level_ + 1);
+    if (!result_) result_ = insert_statement(builder_, level_ + 1);
+    if (!result_) result_ = assign_statement(builder_, level_ + 1);
+    if (!result_) result_ = append_statement(builder_, level_ + 1);
+    if (!result_) result_ = capture_statement(builder_, level_ + 1);
+    if (!result_) result_ = config_load_statement(builder_, level_ + 1);
+    if (!result_) result_ = debug_statement(builder_, level_ + 1);
+    if (!result_) result_ = setfilter_statement(builder_, level_ + 1);
+    if (!result_) result_ = ldelim_rdelim_statement(builder_, level_ + 1);
+    if (!result_) result_ = variable_output(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   /* ********************************************************** */
   // function_name LPAREN [argument_list] RPAREN
-  public static boolean function_call(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "function_call")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, FUNCTION_CALL, "<function call>");
-    r = function_name(b, l + 1);
-    p = r; // pin = 1
-    r = r && report_error_(b, consumeToken(b, LPAREN));
-    r = p && report_error_(b, function_call_2(b, l + 1)) && r;
-    r = p && consumeToken(b, RPAREN) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean function_call(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "function_call")) return false;
+    if (!nextTokenIs(builder_, IDENTIFIER)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = function_name(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, LPAREN);
+    result_ = result_ && function_call_2(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, RPAREN);
+    exit_section_(builder_, marker_, FUNCTION_CALL, result_);
+    return result_;
   }
 
   // [argument_list]
-  private static boolean function_call_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "function_call_2")) return false;
-    argument_list(b, l + 1);
+  private static boolean function_call_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "function_call_2")) return false;
+    argument_list(builder_, level_ + 1);
     return true;
   }
 
   /* ********************************************************** */
   // IDENTIFIER
-  static boolean function_name(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "function_name")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, IDENTIFIER);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean function_name(PsiBuilder builder_, int level_) {
+    return consumeToken(builder_, IDENTIFIER);
   }
 
   /* ********************************************************** */
-  // FUNCTION IDENTIFIER [FUNCTION_PARAMS]
-  public static boolean function_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "function_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, FUNCTION_STATEMENT, "<function statement>");
-    r = consumeTokens(b, 1, FUNCTION, IDENTIFIER);
-    p = r; // pin = 1
-    r = r && function_statement_2(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // FUNCTION declaration_name [FUNCTION_PARAMS] assign_clause*
+  public static boolean function_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "function_statement")) return false;
+    if (!nextTokenIs(builder_, FUNCTION)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, FUNCTION_STATEMENT, null);
+    result_ = consumeToken(builder_, FUNCTION);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, declaration_name(builder_, level_ + 1));
+    result_ = pinned_ && report_error_(builder_, function_statement_2(builder_, level_ + 1)) && result_;
+    result_ = pinned_ && function_statement_3(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // [FUNCTION_PARAMS]
-  private static boolean function_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "function_statement_2")) return false;
-    FUNCTION_PARAMS(b, l + 1);
+  private static boolean function_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "function_statement_2")) return false;
+    FUNCTION_PARAMS(builder_, level_ + 1);
     return true;
   }
 
-  /* ********************************************************** */
-  // html_tag
-  public static boolean html_content(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "html_content")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, HTML_CONTENT, "<html content>");
-    r = consumeToken(b, HTML_TAG);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
-  }
-
-  /* ********************************************************** */
-  // IF expr assign_clause*
-  public static boolean if_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "if_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, IF_STATEMENT, "<if statement>");
-    r = consumeToken(b, IF);
-    p = r; // pin = 1
-    r = r && report_error_(b, expr(b, l + 1));
-    r = p && if_statement_2(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
-  }
-
   // assign_clause*
-  private static boolean if_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "if_statement_2")) return false;
+  private static boolean function_statement_3(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "function_statement_3")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!assign_clause(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "if_statement_2", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "function_statement_3", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
-  // INCLUDE STRING [assign_list] [NOCACHE]
-  public static boolean include_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "include_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, INCLUDE_STATEMENT, "<include statement>");
-    r = consumeTokens(b, 1, INCLUDE, STRING);
-    p = r; // pin = 1
-    r = r && report_error_(b, include_statement_2(b, l + 1));
-    r = p && include_statement_3(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // html_tag
+  public static boolean html_content(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "html_content")) return false;
+    if (!nextTokenIs(builder_, HTML_TAG)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, HTML_TAG);
+    exit_section_(builder_, marker_, HTML_CONTENT, result_);
+    return result_;
   }
 
-  // [assign_list]
-  private static boolean include_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "include_statement_2")) return false;
-    assign_list(b, l + 1);
-    return true;
+  /* ********************************************************** */
+  // IF expr assign_clause*
+  public static boolean if_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "if_statement")) return false;
+    if (!nextTokenIs(builder_, IF)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, IF_STATEMENT, null);
+    result_ = consumeToken(builder_, IF);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, expr(builder_, level_ + 1));
+    result_ = pinned_ && if_statement_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
-  // [NOCACHE]
-  private static boolean include_statement_3(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "include_statement_3")) return false;
-    consumeToken(b, NOCACHE);
+  // assign_clause*
+  private static boolean if_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "if_statement_2")) return false;
+    while (true) {
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "if_statement_2", pos_)) break;
+    }
     return true;
   }
 
   /* ********************************************************** */
-  // INSERT STRING [assign_list]
-  public static boolean insert_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "insert_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, INSERT_STATEMENT, "<insert statement>");
-    r = consumeTokens(b, 1, INSERT, STRING);
-    p = r; // pin = 1
-    r = r && insert_statement_2(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // INCLUDE [STRING] assign_clause* [NOCACHE]
+  public static boolean include_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "include_statement")) return false;
+    if (!nextTokenIs(builder_, INCLUDE)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, INCLUDE_STATEMENT, null);
+    result_ = consumeToken(builder_, INCLUDE);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, include_statement_1(builder_, level_ + 1));
+    result_ = pinned_ && report_error_(builder_, include_statement_2(builder_, level_ + 1)) && result_;
+    result_ = pinned_ && include_statement_3(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
-  // [assign_list]
-  private static boolean insert_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "insert_statement_2")) return false;
-    assign_list(b, l + 1);
+  // [STRING]
+  private static boolean include_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "include_statement_1")) return false;
+    consumeToken(builder_, STRING);
+    return true;
+  }
+
+  // assign_clause*
+  private static boolean include_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "include_statement_2")) return false;
+    while (true) {
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "include_statement_2", pos_)) break;
+    }
+    return true;
+  }
+
+  // [NOCACHE]
+  private static boolean include_statement_3(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "include_statement_3")) return false;
+    consumeToken(builder_, NOCACHE);
+    return true;
+  }
+
+  /* ********************************************************** */
+  // INSERT [STRING | IDENTIFIER] assign_clause*
+  public static boolean insert_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "insert_statement")) return false;
+    if (!nextTokenIs(builder_, INSERT)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, INSERT_STATEMENT, null);
+    result_ = consumeToken(builder_, INSERT);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, insert_statement_1(builder_, level_ + 1));
+    result_ = pinned_ && insert_statement_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
+  }
+
+  // [STRING | IDENTIFIER]
+  private static boolean insert_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "insert_statement_1")) return false;
+    insert_statement_1_0(builder_, level_ + 1);
+    return true;
+  }
+
+  // STRING | IDENTIFIER
+  private static boolean insert_statement_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "insert_statement_1_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, STRING);
+    if (!result_) result_ = consumeToken(builder_, IDENTIFIER);
+    return result_;
+  }
+
+  // assign_clause*
+  private static boolean insert_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "insert_statement_2")) return false;
+    while (true) {
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "insert_statement_2", pos_)) break;
+    }
     return true;
   }
 
   /* ********************************************************** */
   // LDELIM_KW | RDELIM_KW
-  public static boolean ldelim_rdelim_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "ldelim_rdelim_statement")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, LDELIM_RDELIM_STATEMENT, "<ldelim rdelim statement>");
-    r = consumeToken(b, LDELIM_KW);
-    if (!r) r = consumeToken(b, RDELIM_KW);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  public static boolean ldelim_rdelim_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "ldelim_rdelim_statement")) return false;
+    if (!nextTokenIs(builder_, "<ldelim rdelim statement>", LDELIM_KW, RDELIM_KW)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, LDELIM_RDELIM_STATEMENT, "<ldelim rdelim statement>");
+    result_ = consumeToken(builder_, LDELIM_KW);
+    if (!result_) result_ = consumeToken(builder_, RDELIM_KW);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   /* ********************************************************** */
@@ -1179,277 +1293,254 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   //     | BOOLEAN
   //     | NULL_LITERAL
   //     | ARRAY_LITERAL
-  public static boolean literal(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "literal")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, LITERAL, "<literal>");
-    r = consumeToken(b, NUMBER);
-    if (!r) r = consumeToken(b, STRING);
-    if (!r) r = BOOLEAN(b, l + 1);
-    if (!r) r = NULL_LITERAL(b, l + 1);
-    if (!r) r = ARRAY_LITERAL(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
-  }
-
-  /* ********************************************************** */
-  // !'{' .
-  static boolean literal_content(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "literal_content")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NOT_);
-    r = !consumeToken(b, LDELIM);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  public static boolean literal(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "literal")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, LITERAL, "<literal>");
+    result_ = consumeToken(builder_, NUMBER);
+    if (!result_) result_ = consumeToken(builder_, STRING);
+    if (!result_) result_ = BOOLEAN(builder_, level_ + 1);
+    if (!result_) result_ = consumeToken(builder_, NULL_LITERAL);
+    if (!result_) result_ = ARRAY_LITERAL(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   /* ********************************************************** */
   // logical_not_expr ((AND | AND_KEYWORD) logical_not_expr)*
-  static boolean logical_and_expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_and_expr")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, null, "<expression>");
-    r = logical_not_expr(b, l + 1);
-    p = r; // pin = 1
-    r = r && logical_and_expr_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean logical_and_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_and_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = logical_not_expr(builder_, level_ + 1);
+    result_ = result_ && logical_and_expr_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // ((AND | AND_KEYWORD) logical_not_expr)*
-  private static boolean logical_and_expr_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_and_expr_1")) return false;
+  private static boolean logical_and_expr_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_and_expr_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!logical_and_expr_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "logical_and_expr_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!logical_and_expr_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "logical_and_expr_1", pos_)) break;
     }
     return true;
   }
 
   // (AND | AND_KEYWORD) logical_not_expr
-  private static boolean logical_and_expr_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_and_expr_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = logical_and_expr_1_0_0(b, l + 1);
-    p = r; // pin = 1
-    r = r && logical_not_expr(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean logical_and_expr_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_and_expr_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = logical_and_expr_1_0_0(builder_, level_ + 1);
+    result_ = result_ && logical_not_expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // AND | AND_KEYWORD
-  private static boolean logical_and_expr_1_0_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_and_expr_1_0_0")) return false;
-    boolean r;
-    r = consumeToken(b, AND);
-    if (!r) r = consumeToken(b, AND_KEYWORD);
-    return r;
+  private static boolean logical_and_expr_1_0_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_and_expr_1_0_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, AND);
+    if (!result_) result_ = consumeToken(builder_, AND_KEYWORD);
+    return result_;
   }
 
   /* ********************************************************** */
   // ((NOT | NOT_KEYWORD) logical_not_expr)
   //     | comparison_expr
-  static boolean logical_not_expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_not_expr")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, null, "<expression>");
-    r = logical_not_expr_0(b, l + 1);
-    if (!r) r = comparison_expr(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean logical_not_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_not_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = logical_not_expr_0(builder_, level_ + 1);
+    if (!result_) result_ = comparison_expr(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // (NOT | NOT_KEYWORD) logical_not_expr
-  private static boolean logical_not_expr_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_not_expr_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = logical_not_expr_0_0(b, l + 1);
-    p = r; // pin = 1
-    r = r && logical_not_expr(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean logical_not_expr_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_not_expr_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = logical_not_expr_0_0(builder_, level_ + 1);
+    result_ = result_ && logical_not_expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // NOT | NOT_KEYWORD
-  private static boolean logical_not_expr_0_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_not_expr_0_0")) return false;
-    boolean r;
-    r = consumeToken(b, NOT);
-    if (!r) r = consumeToken(b, NOT_KEYWORD);
-    return r;
+  private static boolean logical_not_expr_0_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_not_expr_0_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, NOT);
+    if (!result_) result_ = consumeToken(builder_, NOT_KEYWORD);
+    return result_;
   }
 
   /* ********************************************************** */
   // logical_and_expr ((OR | OR_KEYWORD) logical_and_expr)*
-  static boolean logical_or_expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_or_expr")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, null, "<expression>");
-    r = logical_and_expr(b, l + 1);
-    p = r; // pin = 1
-    r = r && logical_or_expr_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean logical_or_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_or_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = logical_and_expr(builder_, level_ + 1);
+    result_ = result_ && logical_or_expr_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // ((OR | OR_KEYWORD) logical_and_expr)*
-  private static boolean logical_or_expr_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_or_expr_1")) return false;
+  private static boolean logical_or_expr_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_or_expr_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!logical_or_expr_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "logical_or_expr_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!logical_or_expr_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "logical_or_expr_1", pos_)) break;
     }
     return true;
   }
 
   // (OR | OR_KEYWORD) logical_and_expr
-  private static boolean logical_or_expr_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_or_expr_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = logical_or_expr_1_0_0(b, l + 1);
-    p = r; // pin = 1
-    r = r && logical_and_expr(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean logical_or_expr_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_or_expr_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = logical_or_expr_1_0_0(builder_, level_ + 1);
+    result_ = result_ && logical_and_expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // OR | OR_KEYWORD
-  private static boolean logical_or_expr_1_0_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "logical_or_expr_1_0_0")) return false;
-    boolean r;
-    r = consumeToken(b, OR);
-    if (!r) r = consumeToken(b, OR_KEYWORD);
-    return r;
+  private static boolean logical_or_expr_1_0_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "logical_or_expr_1_0_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, OR);
+    if (!result_) result_ = consumeToken(builder_, OR_KEYWORD);
+    return result_;
   }
 
   /* ********************************************************** */
   // DOT IDENTIFIER
   //     | ARROW IDENTIFIER
   //     | array_access
-  public static boolean member_access(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "member_access")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, MEMBER_ACCESS, "<member access>");
-    r = parseTokens(b, 1, DOT, IDENTIFIER);
-    if (!r) r = parseTokens(b, 1, ARROW, IDENTIFIER);
-    if (!r) r = array_access(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  public static boolean member_access(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "member_access")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, MEMBER_ACCESS, "<member access>");
+    result_ = parseTokens(builder_, 0, DOT, IDENTIFIER);
+    if (!result_) result_ = parseTokens(builder_, 0, ARROW, IDENTIFIER);
+    if (!result_) result_ = array_access(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   /* ********************************************************** */
   // PIPE modifier_name [modifier_arguments]
-  public static boolean modifier(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, MODIFIER, "<modifier>");
-    r = consumeToken(b, PIPE);
-    p = r; // pin = 1
-    r = r && report_error_(b, modifier_name(b, l + 1));
-    r = p && modifier_2(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean modifier(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier")) return false;
+    if (!nextTokenIs(builder_, PIPE)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, MODIFIER, null);
+    result_ = consumeToken(builder_, PIPE);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, modifier_name(builder_, level_ + 1));
+    result_ = pinned_ && modifier_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // [modifier_arguments]
-  private static boolean modifier_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier_2")) return false;
-    modifier_arguments(b, l + 1);
+  private static boolean modifier_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_2")) return false;
+    modifier_arguments(builder_, level_ + 1);
     return true;
   }
 
   /* ********************************************************** */
-  // COLON modifier_param (',' modifier_param)*
-  static boolean modifier_arguments(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier_arguments")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, COLON);
-    p = r; // pin = 1
-    r = r && report_error_(b, modifier_param(b, l + 1));
-    r = p && modifier_arguments_2(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
-  }
-
-  // (',' modifier_param)*
-  private static boolean modifier_arguments_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier_arguments_2")) return false;
-    while (true) {
-      int c = current_position_(b);
-      if (!modifier_arguments_2_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "modifier_arguments_2", c)) break;
+  // (COLON modifier_param)+
+  static boolean modifier_arguments(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_arguments")) return false;
+    if (!nextTokenIs(builder_, COLON)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = modifier_arguments_0(builder_, level_ + 1);
+    while (result_) {
+      int pos_ = current_position_(builder_);
+      if (!modifier_arguments_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "modifier_arguments", pos_)) break;
     }
-    return true;
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
-  // ',' modifier_param
-  private static boolean modifier_arguments_2_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier_arguments_2_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, COMMA);
-    p = r; // pin = 1
-    r = r && modifier_param(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  // COLON modifier_param
+  private static boolean modifier_arguments_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_arguments_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, COLON);
+    result_ = result_ && modifier_param(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // modifier+
-  public static boolean modifier_chain(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier_chain")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, MODIFIER_CHAIN, "<modifier chain>");
-    r = modifier(b, l + 1);
-    while (r) {
-      int c = current_position_(b);
-      if (!modifier(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "modifier_chain", c)) break;
+  public static boolean modifier_chain(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_chain")) return false;
+    if (!nextTokenIs(builder_, PIPE)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = modifier(builder_, level_ + 1);
+    while (result_) {
+      int pos_ = current_position_(builder_);
+      if (!modifier(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "modifier_chain", pos_)) break;
     }
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+    exit_section_(builder_, marker_, MODIFIER_CHAIN, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // modifier (',' modifier)*
-  static boolean modifier_list(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier_list")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = modifier(b, l + 1);
-    p = r; // pin = 1
-    r = r && modifier_list_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean modifier_list(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_list")) return false;
+    if (!nextTokenIs(builder_, PIPE)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_);
+    result_ = modifier(builder_, level_ + 1);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && modifier_list_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // (',' modifier)*
-  private static boolean modifier_list_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier_list_1")) return false;
+  private static boolean modifier_list_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_list_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!modifier_list_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "modifier_list_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!modifier_list_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "modifier_list_1", pos_)) break;
     }
     return true;
   }
 
   // ',' modifier
-  private static boolean modifier_list_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier_list_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, COMMA);
-    p = r; // pin = 1
-    r = r && modifier(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean modifier_list_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_list_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, COMMA);
+    result_ = result_ && modifier(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
@@ -1458,233 +1549,216 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   //     | NL2BR | REGEX_REPLACE | REPLACE | SPACIFY | STRING_FORMAT
   //     | STRIP_TAGS | TO_CHARSET | TRUNCATE | UNESCAPE | WORDWRAP | DEFAULT_MOD
   //     | IDENTIFIER
-  static boolean modifier_name(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier_name")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, UPPER);
-    if (!r) r = consumeToken(b, LOWER);
-    if (!r) r = consumeToken(b, CAPITALIZE);
-    if (!r) r = consumeToken(b, CAT);
-    if (!r) r = consumeToken(b, COUNT_PARAGRAPHS);
-    if (!r) r = consumeToken(b, COUNT_SENTENCES);
-    if (!r) r = consumeToken(b, COUNT_WORDS);
-    if (!r) r = consumeToken(b, DATE_FORMAT);
-    if (!r) r = consumeToken(b, ESCAPE);
-    if (!r) r = consumeToken(b, FROM_CHARSET);
-    if (!r) r = consumeToken(b, INDENT);
-    if (!r) r = consumeToken(b, NL2BR);
-    if (!r) r = consumeToken(b, REGEX_REPLACE);
-    if (!r) r = consumeToken(b, REPLACE);
-    if (!r) r = consumeToken(b, SPACIFY);
-    if (!r) r = consumeToken(b, STRING_FORMAT);
-    if (!r) r = consumeToken(b, STRIP_TAGS);
-    if (!r) r = consumeToken(b, TO_CHARSET);
-    if (!r) r = consumeToken(b, TRUNCATE);
-    if (!r) r = consumeToken(b, UNESCAPE);
-    if (!r) r = consumeToken(b, WORDWRAP);
-    if (!r) r = consumeToken(b, DEFAULT_MOD);
-    if (!r) r = consumeToken(b, IDENTIFIER);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean modifier_name(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_name")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, UPPER);
+    if (!result_) result_ = consumeToken(builder_, LOWER);
+    if (!result_) result_ = consumeToken(builder_, CAPITALIZE);
+    if (!result_) result_ = consumeToken(builder_, CAT);
+    if (!result_) result_ = consumeToken(builder_, COUNT_PARAGRAPHS);
+    if (!result_) result_ = consumeToken(builder_, COUNT_SENTENCES);
+    if (!result_) result_ = consumeToken(builder_, COUNT_WORDS);
+    if (!result_) result_ = consumeToken(builder_, DATE_FORMAT);
+    if (!result_) result_ = consumeToken(builder_, ESCAPE);
+    if (!result_) result_ = consumeToken(builder_, FROM_CHARSET);
+    if (!result_) result_ = consumeToken(builder_, INDENT);
+    if (!result_) result_ = consumeToken(builder_, NL2BR);
+    if (!result_) result_ = consumeToken(builder_, REGEX_REPLACE);
+    if (!result_) result_ = consumeToken(builder_, REPLACE);
+    if (!result_) result_ = consumeToken(builder_, SPACIFY);
+    if (!result_) result_ = consumeToken(builder_, STRING_FORMAT);
+    if (!result_) result_ = consumeToken(builder_, STRIP_TAGS);
+    if (!result_) result_ = consumeToken(builder_, TO_CHARSET);
+    if (!result_) result_ = consumeToken(builder_, TRUNCATE);
+    if (!result_) result_ = consumeToken(builder_, UNESCAPE);
+    if (!result_) result_ = consumeToken(builder_, WORDWRAP);
+    if (!result_) result_ = consumeToken(builder_, DEFAULT_MOD);
+    if (!result_) result_ = consumeToken(builder_, IDENTIFIER);
+    return result_;
   }
 
   /* ********************************************************** */
   // expr
-  static boolean modifier_param(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "modifier_param")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = expr(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean modifier_param(PsiBuilder builder_, int level_) {
+    return expr(builder_, level_ + 1);
   }
 
   /* ********************************************************** */
   // unary_expr ((MULT | DIV | MOD | MOD_KEYWORD | DIV_KEYWORD) unary_expr)*
-  static boolean multiplicative_expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "multiplicative_expr")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, null, "<expression>");
-    r = unary_expr(b, l + 1);
-    p = r; // pin = 1
-    r = r && multiplicative_expr_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean multiplicative_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "multiplicative_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = unary_expr(builder_, level_ + 1);
+    result_ = result_ && multiplicative_expr_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // ((MULT | DIV | MOD | MOD_KEYWORD | DIV_KEYWORD) unary_expr)*
-  private static boolean multiplicative_expr_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "multiplicative_expr_1")) return false;
+  private static boolean multiplicative_expr_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "multiplicative_expr_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!multiplicative_expr_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "multiplicative_expr_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!multiplicative_expr_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "multiplicative_expr_1", pos_)) break;
     }
     return true;
   }
 
   // (MULT | DIV | MOD | MOD_KEYWORD | DIV_KEYWORD) unary_expr
-  private static boolean multiplicative_expr_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "multiplicative_expr_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = multiplicative_expr_1_0_0(b, l + 1);
-    p = r; // pin = 1
-    r = r && unary_expr(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean multiplicative_expr_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "multiplicative_expr_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = multiplicative_expr_1_0_0(builder_, level_ + 1);
+    result_ = result_ && unary_expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // MULT | DIV | MOD | MOD_KEYWORD | DIV_KEYWORD
-  private static boolean multiplicative_expr_1_0_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "multiplicative_expr_1_0_0")) return false;
-    boolean r;
-    r = consumeToken(b, MULT);
-    if (!r) r = consumeToken(b, DIV);
-    if (!r) r = consumeToken(b, MOD);
-    if (!r) r = consumeToken(b, MOD_KEYWORD);
-    if (!r) r = consumeToken(b, DIV_KEYWORD);
-    return r;
+  private static boolean multiplicative_expr_1_0_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "multiplicative_expr_1_0_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, MULT);
+    if (!result_) result_ = consumeToken(builder_, DIV);
+    if (!result_) result_ = consumeToken(builder_, MOD);
+    if (!result_) result_ = consumeToken(builder_, MOD_KEYWORD);
+    if (!result_) result_ = consumeToken(builder_, DIV_KEYWORD);
+    return result_;
+  }
+
+  /* ********************************************************** */
+  // IDENTIFIER | STRING
+  static boolean name_value(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "name_value")) return false;
+    if (!nextTokenIs(builder_, "", IDENTIFIER, STRING)) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, IDENTIFIER);
+    if (!result_) result_ = consumeToken(builder_, STRING);
+    return result_;
   }
 
   /* ********************************************************** */
   // IDENTIFIER '=' expr
-  static boolean named_argument(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "named_argument")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeTokens(b, 1, IDENTIFIER, ASSIGN);
-    p = r; // pin = 1
-    r = r && expr(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
-  }
-
-  /* ********************************************************** */
-  // !'{' .
-  static boolean nocache_content(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "nocache_content")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NOT_);
-    r = !consumeToken(b, LDELIM);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean named_argument(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "named_argument")) return false;
+    if (!nextTokenIs(builder_, IDENTIFIER)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeTokens(builder_, 0, IDENTIFIER, ASSIGN);
+    result_ = result_ && expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // !(PIPE | RDELIM)
-  static boolean not_pipe_or_rbrace(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "not_pipe_or_rbrace")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NOT_);
-    r = !not_pipe_or_rbrace_0(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean not_pipe_or_rbrace(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "not_pipe_or_rbrace")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NOT_);
+    result_ = !not_pipe_or_rbrace_0(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // PIPE | RDELIM
-  private static boolean not_pipe_or_rbrace_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "not_pipe_or_rbrace_0")) return false;
-    boolean r;
-    r = consumeToken(b, PIPE);
-    if (!r) r = consumeToken(b, RDELIM);
-    return r;
+  private static boolean not_pipe_or_rbrace_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "not_pipe_or_rbrace_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, PIPE);
+    if (!result_) result_ = consumeToken(builder_, RDELIM);
+    return result_;
   }
 
   /* ********************************************************** */
   // IDENTIFIER (',' IDENTIFIER)*
-  static boolean param_list(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "param_list")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, IDENTIFIER);
-    p = r; // pin = 1
-    r = r && param_list_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean param_list(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "param_list")) return false;
+    if (!nextTokenIs(builder_, IDENTIFIER)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_);
+    result_ = consumeToken(builder_, IDENTIFIER);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && param_list_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // (',' IDENTIFIER)*
-  private static boolean param_list_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "param_list_1")) return false;
+  private static boolean param_list_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "param_list_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!param_list_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "param_list_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!param_list_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "param_list_1", pos_)) break;
     }
     return true;
   }
 
   // ',' IDENTIFIER
-  private static boolean param_list_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "param_list_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeTokens(b, 1, COMMA, IDENTIFIER);
-    p = r; // pin = 1
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean param_list_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "param_list_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeTokens(builder_, 0, COMMA, IDENTIFIER);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // expr
-  static boolean positional_argument(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "positional_argument")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = expr(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean positional_argument(PsiBuilder builder_, int level_) {
+    return expr(builder_, level_ + 1);
   }
 
   /* ********************************************************** */
   // primary_expr (postfix_op)*
-  static boolean postfix_expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "postfix_expr")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, null, "<expression>");
-    r = primary_expr(b, l + 1);
-    p = r; // pin = 1
-    r = r && postfix_expr_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean postfix_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "postfix_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = primary_expr(builder_, level_ + 1);
+    result_ = result_ && postfix_expr_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // (postfix_op)*
-  private static boolean postfix_expr_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "postfix_expr_1")) return false;
+  private static boolean postfix_expr_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "postfix_expr_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!postfix_expr_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "postfix_expr_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!postfix_expr_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "postfix_expr_1", pos_)) break;
     }
     return true;
   }
 
   // (postfix_op)
-  private static boolean postfix_expr_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "postfix_expr_1_0")) return false;
-    boolean r;
-    Marker m = enter_section_(b);
-    r = postfix_op(b, l + 1);
-    exit_section_(b, m, null, r);
-    return r;
+  private static boolean postfix_expr_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "postfix_expr_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = postfix_op(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // member_access
   //     | array_access
   //     | method_call
-  static boolean postfix_op(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "postfix_op")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = member_access(b, l + 1);
-    if (!r) r = array_access(b, l + 1);
-    if (!r) r = consumeToken(b, METHOD_CALL);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean postfix_op(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "postfix_op")) return false;
+    boolean result_;
+    result_ = member_access(builder_, level_ + 1);
+    if (!result_) result_ = array_access(builder_, level_ + 1);
+    if (!result_) result_ = consumeToken(builder_, METHOD_CALL);
+    return result_;
   }
 
   /* ********************************************************** */
@@ -1694,429 +1768,439 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   //     | config_variable
   //     | LPAREN expr RPAREN
   //     | IDENTIFIER
-  static boolean primary_expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "primary_expr")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, null, "<expression>");
-    r = variable(b, l + 1);
-    if (!r) r = literal(b, l + 1);
-    if (!r) r = function_call(b, l + 1);
-    if (!r) r = config_variable(b, l + 1);
-    if (!r) r = primary_expr_4(b, l + 1);
-    if (!r) r = consumeToken(b, IDENTIFIER);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean primary_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "primary_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = variable(builder_, level_ + 1);
+    if (!result_) result_ = literal(builder_, level_ + 1);
+    if (!result_) result_ = function_call(builder_, level_ + 1);
+    if (!result_) result_ = config_variable(builder_, level_ + 1);
+    if (!result_) result_ = primary_expr_4(builder_, level_ + 1);
+    if (!result_) result_ = consumeToken(builder_, IDENTIFIER);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // LPAREN expr RPAREN
-  private static boolean primary_expr_4(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "primary_expr_4")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, LPAREN);
-    p = r; // pin = 1
-    r = r && report_error_(b, expr(b, l + 1));
-    r = p && consumeToken(b, RPAREN) && r;
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean primary_expr_4(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "primary_expr_4")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, LPAREN);
+    result_ = result_ && expr(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, RPAREN);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // template_item*
-  static boolean root_rule(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "root_rule")) return false;
-    Marker m = enter_section_(b, l, _NONE_);
+  static boolean root_rule(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "root_rule")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!template_item(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "root_rule", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!template_item(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "root_rule", pos_)) break;
     }
-    exit_section_(b, l, m, true, false, SmartyParser::not_pipe_or_rbrace);
     return true;
   }
 
   /* ********************************************************** */
   // SECTION IDENTIFIER assign_clause*
-  public static boolean section_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "section_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, SECTION_STATEMENT, "<section loop>");
-    r = consumeTokens(b, 1, SECTION, IDENTIFIER);
-    p = r; // pin = 1
-    r = r && section_statement_2(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean section_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "section_statement")) return false;
+    if (!nextTokenIs(builder_, "<section loop>", SECTION)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, SECTION_STATEMENT, "<section loop>");
+    result_ = consumeTokens(builder_, 1, SECTION, IDENTIFIER);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && section_statement_2(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // assign_clause*
-  private static boolean section_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "section_statement_2")) return false;
+  private static boolean section_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "section_statement_2")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!assign_clause(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "section_statement_2", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "section_statement_2", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
   // SECTIONELSE
-  public static boolean sectionelse_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "sectionelse_statement")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, SECTIONELSE_STATEMENT, "<sectionelse statement>");
-    r = consumeToken(b, SECTIONELSE);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  public static boolean sectionelse_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "sectionelse_statement")) return false;
+    if (!nextTokenIs(builder_, SECTIONELSE)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, SECTIONELSE);
+    exit_section_(builder_, marker_, SECTIONELSE_STATEMENT, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // SETFILTER modifier_list
-  public static boolean setfilter_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "setfilter_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, SETFILTER_STATEMENT, "<setfilter statement>");
-    r = consumeToken(b, SETFILTER);
-    p = r; // pin = 1
-    r = r && modifier_list(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean setfilter_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "setfilter_statement")) return false;
+    if (!nextTokenIs(builder_, SETFILTER)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, SETFILTER_STATEMENT, null);
+    result_ = consumeToken(builder_, SETFILTER);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && modifier_list(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   /* ********************************************************** */
-  // LCOMMENT_START comment_content* LCOMMENT_END
-  public static boolean smarty_comment(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "smarty_comment")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, SMARTY_COMMENT, "<smarty comment>");
-    r = consumeToken(b, LCOMMENT_START);
-    p = r; // pin = 1
-    r = r && report_error_(b, smarty_comment_1(b, l + 1));
-    r = p && consumeToken(b, LCOMMENT_END) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
-  }
-
-  // comment_content*
-  private static boolean smarty_comment_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "smarty_comment_1")) return false;
-    while (true) {
-      int c = current_position_(b);
-      if (!comment_content(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "smarty_comment_1", c)) break;
-    }
-    return true;
+  // '{' '/' closing_keyword '}'
+  public static boolean smarty_closing_tag(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "smarty_closing_tag")) return false;
+    if (!nextTokenIs(builder_, LDELIM)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, SMARTY_CLOSING_TAG, null);
+    result_ = consumeTokens(builder_, 2, LDELIM, DIV);
+    pinned_ = result_; // pin = 2
+    result_ = result_ && report_error_(builder_, closing_keyword(builder_, level_ + 1));
+    result_ = pinned_ && consumeToken(builder_, RDELIM) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   /* ********************************************************** */
   // '{' function_body '}'
-  public static boolean smarty_function_call(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "smarty_function_call")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, SMARTY_FUNCTION_CALL, "<smarty function call>");
-    r = consumeToken(b, LDELIM);
-    p = r; // pin = 1
-    r = r && report_error_(b, function_body(b, l + 1));
-    r = p && consumeToken(b, RDELIM) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean smarty_function_call(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "smarty_function_call")) return false;
+    if (!nextTokenIs(builder_, LDELIM)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, SMARTY_FUNCTION_CALL, null);
+    result_ = consumeToken(builder_, LDELIM);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, function_body(builder_, level_ + 1));
+    result_ = pinned_ && consumeToken(builder_, RDELIM) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   /* ********************************************************** */
-  // '{' LITERAL '}' literal_content* '{' '/' LITERAL '}'
-  public static boolean smarty_literal_block(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "smarty_literal_block")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, SMARTY_LITERAL_BLOCK, "<smarty literal block>");
-    r = consumeTokens(b, 1, LDELIM, LITERAL, RDELIM);
-    p = r; // pin = 1
-    r = r && report_error_(b, smarty_literal_block_3(b, l + 1));
-    r = p && report_error_(b, consumeTokens(b, -1, LDELIM, DIV, LITERAL, RDELIM)) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // '{' LITERAL_KW '}' verbatim_content* '{' '/' LITERAL_KW '}'
+  public static boolean smarty_literal_block(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "smarty_literal_block")) return false;
+    if (!nextTokenIs(builder_, LDELIM)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, SMARTY_LITERAL_BLOCK, null);
+    result_ = consumeTokens(builder_, 2, LDELIM, LITERAL_KW, RDELIM);
+    pinned_ = result_; // pin = 2
+    result_ = result_ && report_error_(builder_, smarty_literal_block_3(builder_, level_ + 1));
+    result_ = pinned_ && report_error_(builder_, consumeTokens(builder_, -1, LDELIM, DIV, LITERAL_KW, RDELIM)) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
-  // literal_content*
-  private static boolean smarty_literal_block_3(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "smarty_literal_block_3")) return false;
+  // verbatim_content*
+  private static boolean smarty_literal_block_3(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "smarty_literal_block_3")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!literal_content(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "smarty_literal_block_3", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!verbatim_content(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "smarty_literal_block_3", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
-  // '{' NOCACHE '}' nocache_content* '{' '/' NOCACHE '}'
-  public static boolean smarty_nocache_block(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "smarty_nocache_block")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, SMARTY_NOCACHE_BLOCK, "<smarty nocache block>");
-    r = consumeTokens(b, 1, LDELIM, NOCACHE, RDELIM);
-    p = r; // pin = 1
-    r = r && report_error_(b, smarty_nocache_block_3(b, l + 1));
-    r = p && report_error_(b, consumeTokens(b, -1, LDELIM, DIV, NOCACHE, RDELIM)) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // '{' NOCACHE '}' verbatim_content* '{' '/' NOCACHE '}'
+  public static boolean smarty_nocache_block(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "smarty_nocache_block")) return false;
+    if (!nextTokenIs(builder_, LDELIM)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, SMARTY_NOCACHE_BLOCK, null);
+    result_ = consumeTokens(builder_, 2, LDELIM, NOCACHE, RDELIM);
+    pinned_ = result_; // pin = 2
+    result_ = result_ && report_error_(builder_, smarty_nocache_block_3(builder_, level_ + 1));
+    result_ = pinned_ && report_error_(builder_, consumeTokens(builder_, -1, LDELIM, DIV, NOCACHE, RDELIM)) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
-  // nocache_content*
-  private static boolean smarty_nocache_block_3(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "smarty_nocache_block_3")) return false;
+  // verbatim_content*
+  private static boolean smarty_nocache_block_3(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "smarty_nocache_block_3")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!nocache_content(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "smarty_nocache_block_3", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!verbatim_content(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "smarty_nocache_block_3", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
-  // smarty_comment
-  //     | smarty_function_call
-  //     | smarty_literal_block
+  // smarty_literal_block
   //     | smarty_nocache_block
-  public static boolean smarty_tag(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "smarty_tag")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, SMARTY_TAG, "<smarty tag>");
-    r = smarty_comment(b, l + 1);
-    if (!r) r = smarty_function_call(b, l + 1);
-    if (!r) r = smarty_literal_block(b, l + 1);
-    if (!r) r = smarty_nocache_block(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  //     | smarty_closing_tag
+  //     | smarty_function_call
+  public static boolean smarty_tag(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "smarty_tag")) return false;
+    if (!nextTokenIs(builder_, LDELIM)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = smarty_literal_block(builder_, level_ + 1);
+    if (!result_) result_ = smarty_nocache_block(builder_, level_ + 1);
+    if (!result_) result_ = smarty_closing_tag(builder_, level_ + 1);
+    if (!result_) result_ = smarty_function_call(builder_, level_ + 1);
+    exit_section_(builder_, marker_, SMARTY_TAG, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // SWITCH expr
-  public static boolean switch_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "switch_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, SWITCH_STATEMENT, "<switch statement>");
-    r = consumeToken(b, SWITCH);
-    p = r; // pin = 1
-    r = r && expr(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean switch_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "switch_statement")) return false;
+    if (!nextTokenIs(builder_, SWITCH)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, SWITCH_STATEMENT, null);
+    result_ = consumeToken(builder_, SWITCH);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && expr(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   /* ********************************************************** */
   // smarty_tag
   //     | text_content
   //     | html_content
-  static boolean template_item(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "template_item")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = smarty_tag(b, l + 1);
-    if (!r) r = text_content(b, l + 1);
-    if (!r) r = html_content(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean template_item(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "template_item")) return false;
+    boolean result_;
+    result_ = smarty_tag(builder_, level_ + 1);
+    if (!result_) result_ = text_content(builder_, level_ + 1);
+    if (!result_) result_ = html_content(builder_, level_ + 1);
+    return result_;
   }
 
   /* ********************************************************** */
   // (IDENTIFIER | STRING) ('.' IDENTIFIER)*
-  static boolean template_reference(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "template_reference")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = template_reference_0(b, l + 1);
-    p = r; // pin = 1
-    r = r && template_reference_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean template_reference(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "template_reference")) return false;
+    if (!nextTokenIs(builder_, "", IDENTIFIER, STRING)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = template_reference_0(builder_, level_ + 1);
+    result_ = result_ && template_reference_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // IDENTIFIER | STRING
-  private static boolean template_reference_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "template_reference_0")) return false;
-    boolean r;
-    r = consumeToken(b, IDENTIFIER);
-    if (!r) r = consumeToken(b, STRING);
-    return r;
+  private static boolean template_reference_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "template_reference_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, IDENTIFIER);
+    if (!result_) result_ = consumeToken(builder_, STRING);
+    return result_;
   }
 
   // ('.' IDENTIFIER)*
-  private static boolean template_reference_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "template_reference_1")) return false;
+  private static boolean template_reference_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "template_reference_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!template_reference_1_0(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "template_reference_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!template_reference_1_0(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "template_reference_1", pos_)) break;
     }
     return true;
   }
 
   // '.' IDENTIFIER
-  private static boolean template_reference_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "template_reference_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeTokens(b, 1, DOT, IDENTIFIER);
-    p = r; // pin = 1
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean template_reference_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "template_reference_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeTokens(builder_, 0, DOT, IDENTIFIER);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // logical_or_expr (QUESTION expr COLON expr)?
-  static boolean ternary_expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "ternary_expr")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, null, "<expression>");
-    r = logical_or_expr(b, l + 1);
-    p = r; // pin = 1
-    r = r && ternary_expr_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean ternary_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "ternary_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = logical_or_expr(builder_, level_ + 1);
+    result_ = result_ && ternary_expr_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // (QUESTION expr COLON expr)?
-  private static boolean ternary_expr_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "ternary_expr_1")) return false;
-    ternary_expr_1_0(b, l + 1);
+  private static boolean ternary_expr_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "ternary_expr_1")) return false;
+    ternary_expr_1_0(builder_, level_ + 1);
     return true;
   }
 
   // QUESTION expr COLON expr
-  private static boolean ternary_expr_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "ternary_expr_1_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, QUESTION);
-    p = r; // pin = 1
-    r = r && report_error_(b, expr(b, l + 1));
-    r = p && report_error_(b, consumeToken(b, COLON)) && r;
-    r = p && expr(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean ternary_expr_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "ternary_expr_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, QUESTION);
+    result_ = result_ && expr(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, COLON);
+    result_ = result_ && expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
-  // ~
-  public static boolean text_content(PsiBuilder b, int l) {
-    Marker m = enter_section_(b, l, _NONE_, TEXT_CONTENT, null);
-    exit_section_(b, l, m, true, false, SmartyParser::not_pipe_or_rbrace);
-    return true;
+  // TEXT+
+  public static boolean text_content(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "text_content")) return false;
+    if (!nextTokenIs(builder_, TEXT)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, TEXT);
+    while (result_) {
+      int pos_ = current_position_(builder_);
+      if (!consumeToken(builder_, TEXT)) break;
+      if (!empty_element_parsed_guard_(builder_, "text_content", pos_)) break;
+    }
+    exit_section_(builder_, marker_, TEXT_CONTENT, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // ((PLUS | MINUS | NOT | NOT_KEYWORD) unary_expr)
   //     | postfix_expr
-  static boolean unary_expr(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "unary_expr")) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, null, "<expression>");
-    r = unary_expr_0(b, l + 1);
-    if (!r) r = postfix_expr(b, l + 1);
-    exit_section_(b, l, m, r, false, SmartyParser::not_pipe_or_rbrace);
-    return r;
+  static boolean unary_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "unary_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = unary_expr_0(builder_, level_ + 1);
+    if (!result_) result_ = postfix_expr(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   // (PLUS | MINUS | NOT | NOT_KEYWORD) unary_expr
-  private static boolean unary_expr_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "unary_expr_0")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = unary_expr_0_0(b, l + 1);
-    p = r; // pin = 1
-    r = r && unary_expr(b, l + 1);
-    exit_section_(b, l, m, r, p, null);
-    return r || p;
+  private static boolean unary_expr_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "unary_expr_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = unary_expr_0_0(builder_, level_ + 1);
+    result_ = result_ && unary_expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // PLUS | MINUS | NOT | NOT_KEYWORD
-  private static boolean unary_expr_0_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "unary_expr_0_0")) return false;
-    boolean r;
-    r = consumeToken(b, PLUS);
-    if (!r) r = consumeToken(b, MINUS);
-    if (!r) r = consumeToken(b, NOT);
-    if (!r) r = consumeToken(b, NOT_KEYWORD);
-    return r;
+  private static boolean unary_expr_0_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "unary_expr_0_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, PLUS);
+    if (!result_) result_ = consumeToken(builder_, MINUS);
+    if (!result_) result_ = consumeToken(builder_, NOT);
+    if (!result_) result_ = consumeToken(builder_, NOT_KEYWORD);
+    return result_;
   }
 
   /* ********************************************************** */
   // DOLLAR variable_name
-  public static boolean variable(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "variable")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, VARIABLE, "<variable>");
-    r = consumeToken(b, DOLLAR);
-    p = r; // pin = 1
-    r = r && variable_name(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean variable(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "variable")) return false;
+    if (!nextTokenIs(builder_, DOLLAR)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, DOLLAR);
+    result_ = result_ && variable_name(builder_, level_ + 1);
+    exit_section_(builder_, marker_, VARIABLE, result_);
+    return result_;
   }
 
   /* ********************************************************** */
   // IDENTIFIER member_access*
-  static boolean variable_name(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "variable_name")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_);
-    r = consumeToken(b, IDENTIFIER);
-    p = r; // pin = 1
-    r = r && variable_name_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  static boolean variable_name(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "variable_name")) return false;
+    if (!nextTokenIs(builder_, IDENTIFIER)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, IDENTIFIER);
+    result_ = result_ && variable_name_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   // member_access*
-  private static boolean variable_name_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "variable_name_1")) return false;
+  private static boolean variable_name_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "variable_name_1")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!member_access(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "variable_name_1", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!member_access(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "variable_name_1", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
-  // expression modifier_chain?
-  public static boolean variable_output(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "variable_output")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, VARIABLE_OUTPUT, "<variable output>");
-    r = consumeToken(b, EXPRESSION);
-    p = r; // pin = 1
-    r = r && variable_output_1(b, l + 1);
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  // expr modifier_chain?
+  public static boolean variable_output(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "variable_output")) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, VARIABLE_OUTPUT, "<variable output>");
+    result_ = expr(builder_, level_ + 1);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && variable_output_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // modifier_chain?
-  private static boolean variable_output_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "variable_output_1")) return false;
-    modifier_chain(b, l + 1);
+  private static boolean variable_output_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "variable_output_1")) return false;
+    modifier_chain(builder_, level_ + 1);
     return true;
   }
 
   /* ********************************************************** */
+  // TEXT | html_tag
+  static boolean verbatim_content(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "verbatim_content")) return false;
+    if (!nextTokenIs(builder_, "", HTML_TAG, TEXT)) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, TEXT);
+    if (!result_) result_ = consumeToken(builder_, HTML_TAG);
+    return result_;
+  }
+
+  /* ********************************************************** */
   // WHILE expr assign_clause*
-  public static boolean while_statement(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "while_statement")) return false;
-    boolean r, p;
-    Marker m = enter_section_(b, l, _NONE_, WHILE_STATEMENT, "<while loop>");
-    r = consumeToken(b, WHILE);
-    p = r; // pin = 1
-    r = r && report_error_(b, expr(b, l + 1));
-    r = p && while_statement_2(b, l + 1) && r;
-    exit_section_(b, l, m, r, p, SmartyParser::not_pipe_or_rbrace);
-    return r || p;
+  public static boolean while_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "while_statement")) return false;
+    if (!nextTokenIs(builder_, "<while loop>", WHILE)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, WHILE_STATEMENT, "<while loop>");
+    result_ = consumeToken(builder_, WHILE);
+    pinned_ = result_; // pin = 1
+    result_ = result_ && report_error_(builder_, expr(builder_, level_ + 1));
+    result_ = pinned_ && while_statement_2(builder_, level_ + 1) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
   }
 
   // assign_clause*
-  private static boolean while_statement_2(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "while_statement_2")) return false;
+  private static boolean while_statement_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "while_statement_2")) return false;
     while (true) {
-      int c = current_position_(b);
-      if (!assign_clause(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "while_statement_2", c)) break;
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "while_statement_2", pos_)) break;
     }
     return true;
   }
