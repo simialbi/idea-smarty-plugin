@@ -94,6 +94,12 @@ class SmartyFormatterTest : SmartyTestCase() {
         "{\$user.name}{\$rows[0]}"
     )
 
+    /** A config variable's hash marks hug its key, the way a `$` hugs a variable name. */
+    fun testConfigVariablesAreTight() = assertFormatted(
+        "{# pageTitle #}{\$a|cat:# suffix #}",
+        "{#pageTitle#}{\$a|cat:#suffix#}"
+    )
+
     fun testCallsHugTheirParentheses() = assertFormatted(
         "{count ( \$items ,\$other )}",
         "{count(\$items, \$other)}"

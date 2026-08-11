@@ -1,5 +1,6 @@
 package ch.erlebnisbank.smarty
 
+import ch.erlebnisbank.smarty.psi.ConfigVariable
 import ch.erlebnisbank.smarty.psi.SmartyTypes
 import ch.erlebnisbank.smarty.psi.TextContent
 import ch.erlebnisbank.smarty.psi.Variable
@@ -90,6 +91,47 @@ class SmartyParsingTest : SmartyTestCase() {
         """.trimIndent()
     )
 
+    // ---------------------------------------------------------------- config variables
+
+    /**
+     * A config variable is the one kind Smarty writes without a `$`. It reads a key from the file
+     * a `{config_load}` pulled in, and everything an ordinary variable can carry it can carry too:
+     * an index, a modifier chain, a place in a condition or an attribute value.
+     */
+    fun testConfigVariable() = assertConfigVariables("{#pageTitle#}", "#pageTitle#")
+
+    /**
+     * The reason the name gets a lexer state of its own. `default`, `section` and `include` are
+     * ordinary config keys and perfectly ordinary Smarty keywords; without the switch they would
+     * lex as those keywords and the tag would not parse.
+     */
+    fun testConfigVariableNamedLikeAKeyword() =
+        assertConfigVariables(
+            "{#default#}{#section#}{#include#}{#if#}",
+            "#default#", "#section#", "#include#", "#if#"
+        )
+
+    /**
+     * The indirect form: the key is whatever the variable holds. Only the key position gets the
+     * lexer state, so the variable's *own* name is still subject to the general keyword gap -
+     * `{#$section#}` does not parse, for the same reason `{$section}` does not.
+     */
+    fun testConfigVariableFromAVariable() = assertConfigVariables("{#\$key#}", "#\$key#")
+
+    fun testConfigVariableWithIndex() = assertParses("{#rows#[0]}")
+
+    fun testConfigVariableWithModifier() = assertParses("{#pageTitle#|escape:\"html\"}")
+
+    fun testConfigVariableInACondition() = assertParses("{if #showFooter# eq \"yes\"}x{/if}")
+
+    fun testConfigVariableInAnAttributeValue() =
+        assertConfigVariables("<body bgcolor=\"{#bodyBgColor#}\">", "#bodyBgColor#")
+
+    /** `{config_load}` reads the file the keys come from, and was already parsing. */
+    fun testConfigLoadThenUse() = assertParses(
+        "{config_load file=\"colors.conf\" section=\"setup\"}\n<p>{#pageTitle#}</p>"
+    )
+
     /**
      * A regex pattern is mostly backslashes, so a single-backslash escape has to stay inside the
      * string token instead of ending it. The lexer used to require two backslashes, which made
@@ -135,6 +177,19 @@ class SmartyParsingTest : SmartyTestCase() {
 
         val found = PsiTreeUtil
             .findChildrenOfType(file, Variable::class.java)
+            .map { it.text }
+
+        assertEquals(expected.toList(), found)
+    }
+
+    /** Collects every CONFIG_VARIABLE in the file, in document order, hash marks included. */
+    private fun assertConfigVariables(text: String, vararg expected: String) {
+        val file = myFixture.configureByText("test.tpl", text)
+        val error = PsiTreeUtil.findChildOfType(file, PsiErrorElement::class.java)
+        assertNull("unexpected parse error in $text", error)
+
+        val found = PsiTreeUtil
+            .findChildrenOfType(file, ConfigVariable::class.java)
             .map { it.text }
 
         assertEquals(expected.toList(), found)

@@ -349,9 +349,16 @@ capture_statement ::=
     CAPTURE variable assign_clause*
     {pin=1 name="capture statement"}
 
+// The tag that makes config variables available. `section` is one of its documented attributes and
+// also one of this lexer's keywords, so `section="setup"` does not reach assign_clause, whose name
+// must be an IDENTIFIER - it is spelled out here instead. This is one instance of a general gap:
+// roughly sixty keywords cannot be used where an identifier is expected, and fixing it properly
+// means lexing them by context rather than patching each rule.
 config_load_statement ::=
-    CONFIG_LOAD [STRING] assign_clause*
+    CONFIG_LOAD [STRING] (assign_clause | section_attribute)*
     {pin=1}
+
+private section_attribute ::= SECTION '=' expr
 
 debug_statement ::= DEBUG [DEBUG_VARS] {pin=1}
 
@@ -473,7 +480,23 @@ private array_index ::=
     | IDENTIFIER
     | NUMBER
 
-config_variable ::= AT IDENTIFIER
+// The one kind of variable Smarty does not spell with a `$`: config variables come from the file
+// a {config_load} read and are written between hash marks. The rule that used to stand here was
+// `AT IDENTIFIER`, which is not Smarty syntax at all - `@` is the array-modifier prefix of
+// `{$rows|@count}` and the loop-property separator of `{$item@index}`, neither of which this
+// grammar covers yet.
+//
+// Nothing further is needed for `{#foo#[1]}` or `{#foo#|escape}`: an index follows from
+// `postfix_expr`, a modifier from `variable_output`, exactly as for a `$` variable.
+//
+// https://smarty-php.github.io/smarty/stable/designers/language-variables/language-config-variables/
+config_variable ::= HASH config_variable_name HASH {pin=1}
+
+/* Either the name itself, or a variable holding it - `{#$section#}` reads the config key whose
+   name is the value of `$section`. */
+private config_variable_name ::=
+    IDENTIFIER
+    | variable
 
 // ============================================================================
 // FUNCTION CALLS

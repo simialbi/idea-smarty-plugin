@@ -46,6 +46,13 @@ internal class SmartySpacingRules(settings: CodeStyleSettings) {
         .after(SmartyTypes.LBRACKET).none()
         .before(SmartyTypes.RBRACKET).none()
         .after(SmartyTypes.DOLLAR).none()
+
+        // A hash binds to its config key the way a dollar binds to a variable name: {#pageTitle#}.
+        .aroundInside(SmartyTypes.HASH, SmartyTypes.CONFIG_VARIABLE).none()
+
+        // Nothing reaches this rule today: the lexer emits `@` but no grammar rule consumes it
+        // since config variables stopped being spelled with it. It is the answer the loop
+        // properties ({$item@index}) and array modifiers ({$rows|@count}) will want.
         .after(SmartyTypes.AT).none()
 
         // Modifier chains are written without air: {$title|truncate:30:"..."|escape}

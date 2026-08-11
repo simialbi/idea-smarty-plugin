@@ -39,6 +39,7 @@ String               = \"([^\"\\]|\\[^])*\"|\'([^\'\\]|\\[^])*\'
 
 %state IN_SMARTY_TAG
 %state IN_SMARTY_COMMENT
+%state IN_CONFIG_VARIABLE
 %state IN_LITERAL_BLOCK
 %state IN_NOCACHE_BLOCK
 
@@ -228,7 +229,20 @@ String               = \"([^\"\\]|\\[^])*\"|\'([^\'\\]|\\[^])*\'
     // SPECIAL
     "@"                            { return SmartyTypes.AT; }
     "$"                            { return SmartyTypes.DOLLAR; }
+    // The opening hash of a config variable, {#name#}. Its name is lexed in a state of its own so
+    // that the ~60 words this state reserves stay usable as config keys: {#default#} and
+    // {#section#} are ordinary keys, and without the switch they would lex as DEFAULT and SECTION
+    // and fail to parse. The lookahead is what tells the two hashes apart - it is not consumed,
+    // so this rule and the next are both one character long and JFlex takes the first.
+    "#" / {Identifier} "#"         {
+                                     yybegin(IN_CONFIG_VARIABLE);
+                                     return SmartyTypes.HASH;
+                                   }
+
+    // The closing hash, and both hashes of the indirect form {#$name#}, where the name comes from
+    // a variable and the tag state is what should lex it.
     "#"                            { return SmartyTypes.HASH; }
+
     "=>"                           { return SmartyTypes.FAT_ARROW; }
 
     // Variables are NOT lexed as one token: the grammar models them as
@@ -249,6 +263,26 @@ String               = \"([^\"\\]|\\[^])*\"|\'([^\'\\]|\\[^])*\'
 
     // CATCH-ALL for unknown characters
     .                              { return SmartyTypes.BAD_CHARACTER; }
+}
+
+// ============================================================================
+// CONFIG VARIABLE STATE - the name between the hash marks of {#name#}
+// ============================================================================
+
+<IN_CONFIG_VARIABLE> {
+    // Exactly one token long: the state exists only to keep the keyword rules of IN_SMARTY_TAG
+    // away from a config key that happens to spell one.
+    {Identifier}                   {
+                                     yybegin(IN_SMARTY_TAG);
+                                     return SmartyTypes.IDENTIFIER;
+                                   }
+
+    // Unreachable as long as the lookahead that enters this state is what it is, and cheap
+    // insurance if that ever changes: hand the character back rather than let the scan fail.
+    [^]                            {
+                                     yypushback(1);
+                                     yybegin(IN_SMARTY_TAG);
+                                   }
 }
 
 // ============================================================================

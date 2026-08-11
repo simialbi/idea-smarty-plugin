@@ -27,4 +27,10 @@ public class ConfigVariableImpl extends ASTWrapperPsiElement implements ConfigVa
     else super.accept(visitor);
   }
 
+  @Override
+  @Nullable
+  public Variable getVariable() {
+    return findChildByClass(Variable.class);
+  }
+
 }

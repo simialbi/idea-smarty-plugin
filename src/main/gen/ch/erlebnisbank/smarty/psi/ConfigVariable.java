@@ -7,4 +7,7 @@ import com.intellij.psi.PsiElement;
 
 public interface ConfigVariable extends PsiElement {
 
+  @Nullable
+  Variable getVariable();
+
 }

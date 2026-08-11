@@ -60,6 +60,8 @@
         <gotoSymbolContributor implementation="ch.erlebnisbank.smarty.SmartyChooseByNameContributor" />
         <lang.formatter language="Smarty"
                         implementationClass="ch.erlebnisbank.smarty.SmartyFormattingModelBuilder" />
+        <lang.commenter language="Smarty"
+                        implementationClass="ch.erlebnisbank.smarty.SmartyCommenter" />
     </extensions>
 
 </idea-plugin>
