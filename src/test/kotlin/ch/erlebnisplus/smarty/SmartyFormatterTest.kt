@@ -224,6 +224,28 @@ class SmartyFormatterTest : SmartyTestCase() {
         "<div>\n    {* note *}\n    <p>x</p>\n</div>"
     )
 
+    /**
+     * A tag in the header of an HTML tag rather than in its body, which is the case that threw
+     * `IndexOutOfBoundsException: Index -1 out of bounds for length 3` on every reformat.
+     *
+     * Asking the enclosing markup how deep it indents its children means asking
+     * [com.intellij.formatting.Block.getChildAttributes] for a position, and a tag in a header is
+     * at position zero - it descends from the very first block of the element. `XmlTagBlock`
+     * answers that position by reading its own list at `-1`. [SmartyBlock] asks for position one
+     * instead, which the markup can answer and which means the same thing for every child that
+     * does not follow an attribute.
+     *
+     * An attribute value is the common form and the one this was reported from; the other three
+     * are the same crash reached through a Smarty tag that spans HTML the parser cannot then treat
+     * as an attribute at all. None of them moves: a header stays on the line it was written on.
+     */
+    fun testATagInsideATagHeaderSurvivesAReformat() {
+        assertUnchanged("<div class=\"{\$x}\">y</div>")
+        assertUnchanged("<div {if \$a}class=\"x\"{/if}>y</div>")
+        assertUnchanged("<input type=\"text\" {if \$disabled}disabled{/if}/>")
+        assertUnchanged("<div {\$attributes}>y</div>")
+    }
+
     // ---------------------------------------------------------------- what stays untouched
 
     /**

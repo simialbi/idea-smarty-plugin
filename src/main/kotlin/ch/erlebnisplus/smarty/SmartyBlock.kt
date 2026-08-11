@@ -115,6 +115,19 @@ internal class SmartyBlock(
      * opinion of its own and returns a `null` indent, hence the walk: the enclosing element may be
      * one or several wrappers further up. `null` at the top of the walk means there is no markup
      * around the tag at all.
+     *
+     * The index is the position of a *new* child, and it may not be zero. `XmlTagBlock` answers
+     * that position by looking at the child before it and reading its list at `-1`, which throws;
+     * and zero is not a rare position for a Smarty tag to be in, because a tag standing in a tag
+     * header - `<div class="{$x}">`, `<div {if $a}disabled{/if}>` - descends from the very first
+     * block of the enclosing element. One is the nearest position the markup can answer for, and
+     * for everything but a tag that follows an attribute the answer is the same one anyway.
+     *
+     * Nor is it the same list: a wrapper's children are its own block's children *merged* with the
+     * template blocks, while `getChildAttributes` is forwarded to the unmerged block behind it. The
+     * index is therefore an approximation on either side of the boundary, which is tolerable
+     * because the question - how deep does this element indent what is inside it - has one answer
+     * for all of its children.
      */
     private fun dataLanguageChildIndent(): Indent? {
         var child: Block = this
@@ -124,7 +137,7 @@ internal class SmartyBlock(
             val index = above.subBlocks.indexOf(child)
             if (index < 0) return null
 
-            above.getChildAttributes(index).childIndent?.let { return it }
+            above.getChildAttributes(maxOf(index, 1)).childIndent?.let { return it }
 
             child = above
             above = above.parent

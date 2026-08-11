@@ -20,3 +20,5 @@
   cannot parse.
 - `Reformat Code` mangled the HTML indentation of a `.tpl` file: a comment between two runs of markup left a hole in
   the block tree, and Smarty tags ignored HTML's *Do not indent children of* setting.
+- `Reformat Code` threw `IndexOutOfBoundsException: Index -1` on a file holding a Smarty tag in the header of an HTML
+  tag — `<div class="{$x}">` among them.
