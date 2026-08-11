@@ -5,15 +5,18 @@ import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
 
-public interface MemberAccess extends PsiElement {
+public interface MethodCall extends PsiElement {
 
   @Nullable
-  ArrayAccess getArrayAccess();
-
-  @Nullable
-  MethodCall getMethodCall();
+  ArgumentList getArgumentList();
 
   @Nullable
   Variable getVariable();
+
+  @NotNull
+  String getMethodName();
+
+  @NotNull
+  String[] getMethodArguments();
 
 }

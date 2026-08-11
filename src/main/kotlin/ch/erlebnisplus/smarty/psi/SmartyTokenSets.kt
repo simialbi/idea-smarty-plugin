@@ -44,6 +44,17 @@ object SmartyTokenSets {
     )
 
     /**
+     * The four separators that open one step of an access chain: `{$obj.property}`,
+     * `{$obj->property}`, `{Foo::CONSTANT}` and the loop property of `{$row@index}`.
+     *
+     * A `[…]` step has none of them, which is how the PSI helpers and the annotator tell a
+     * subscript from a named step without looking at the rule that matched.
+     */
+    val ACCESS_SEPARATORS: TokenSet = TokenSet.create(
+        SmartyTypes.DOT, SmartyTypes.ARROW, SmartyTypes.DOUBLE_COLON, SmartyTypes.AT
+    )
+
+    /**
      * Every binary and unary operator, symbolic and textual alike, so that `{if $a eq $b}` is
      * treated exactly like `{if $a == $b}` by highlighting and by the PSI helpers.
      */

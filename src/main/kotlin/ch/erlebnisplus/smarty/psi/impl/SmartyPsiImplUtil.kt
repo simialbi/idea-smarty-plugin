@@ -197,22 +197,35 @@ class SmartyPsiImplUtil private constructor() {
                 .mapNotNull { access -> propertyStepName(access) }
                 .toTypedArray()
 
-        /** The name behind the `.`, `->` or `@` of one access step; `null` for a `[…]` step. */
+        /**
+         * The name behind the `.`, `->`, `::` or `@` of one access step; `null` for a `[…]` step.
+         *
+         * A step that calls something is named by the method: `{$this->head()->tail}` walks
+         * `head` and then `tail`, which is the chain a reader of the template sees.
+         */
         private fun propertyStepName(access: MemberAccess): String? {
-            var node = access.node.firstChildNode
+            val call = access.methodCall ?: return stepName(access.node)
+            return getMethodName(call)
+        }
+
+        /**
+         * The text of the first child behind the access separator that opens [node]'s children,
+         * or `null` when the first child is not a separator at all - which is what a `[…]` step
+         * looks like from here.
+         */
+        private fun stepName(node: ASTNode): String? {
+            var child = node.firstChildNode
             var seenSeparator = false
 
-            while (node != null) {
-                val type = node.elementType
+            while (child != null) {
+                val type = child.elementType
 
                 if (!SmartyTokenSets.WHITE_SPACES.contains(type)) {
-                    if (seenSeparator) return node.text
-                    if (type !== SmartyTypes.DOT && type !== SmartyTypes.ARROW && type !== SmartyTypes.AT) {
-                        return null
-                    }
+                    if (seenSeparator) return child.text
+                    if (!SmartyTokenSets.ACCESS_SEPARATORS.contains(type)) return null
                     seenSeparator = true
                 }
-                node = node.treeNext
+                child = child.treeNext
             }
 
             return null
@@ -289,6 +302,38 @@ class SmartyPsiImplUtil private constructor() {
             }
 
             return args.toTypedArray()
+        }
+
+        // ========================================================================
+        // METHOD CALL METHODS
+        // ========================================================================
+
+        /**
+         * The name of the method behind the `->` or the `::`.
+         *
+         * Not `findChildByType(IDENTIFIER)` the way [getFunctionName] does it: a method may be
+         * named after one of the ~60 words this language reserves - `{$this->default()}` is a
+         * perfectly ordinary call - and those arrive as their own token, not as an `IDENTIFIER`.
+         */
+        @JvmStatic
+        fun getMethodName(element: MethodCall): String = stepName(element.node) ?: ""
+
+        /**
+         * The arguments of `{$obj->method($a, 1)}`, in source order and as written.
+         *
+         * A call without parentheses content has none; the separating commas are not arguments.
+         */
+        @JvmStatic
+        fun getMethodArguments(element: MethodCall): Array<String> {
+            val list = element.argumentList ?: return emptyArray()
+
+            return list.node.getChildren(null)
+                .filter { child ->
+                    child.elementType !== SmartyTypes.COMMA &&
+                        !SmartyTokenSets.WHITE_SPACES.contains(child.elementType)
+                }
+                .map { child -> child.text }
+                .toTypedArray()
         }
 
         /**

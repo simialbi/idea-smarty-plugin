@@ -104,6 +104,15 @@ class SmartyFormatterTest : SmartyTestCase() {
         "{\$row@index}{\$rows|@count}"
     )
 
+    /**
+     * A method call is written as tight as the access chain that reaches it, and `::` binds a class
+     * to its member the way `->` binds an object to its property.
+     */
+    fun testCallsAndStaticAccessAreTight() = assertFormatted(
+        "{\$this -> head ()}{Foo :: bar ( \$x )}{DynamicModal :: SIZE}",
+        "{\$this->head()}{Foo::bar(\$x)}{DynamicModal::SIZE}"
+    )
+
     /** A config variable's hash marks hug its key, the way a `$` hugs a variable name. */
     fun testConfigVariablesAreTight() = assertFormatted(
         "{# pageTitle #}{\$a|cat:# suffix #}",

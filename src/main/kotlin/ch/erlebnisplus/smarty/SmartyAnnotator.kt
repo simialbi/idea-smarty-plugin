@@ -2,6 +2,7 @@ package ch.erlebnisplus.smarty
 
 import ch.erlebnisplus.smarty.psi.*
 import com.intellij.codeInspection.ProblemHighlightType
+import com.intellij.lang.ASTNode
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
@@ -27,6 +28,8 @@ class SmartyAnnotator : Annotator {
         when (element) {
             is Variable -> annotateVariable(element, holder)
             is ConfigVariable -> highlight(holder, element.textRange, SmartySyntaxHighlighter.CONSTANT)
+            is MemberAccess -> annotateMemberAccess(element, holder)
+            is MethodCall -> annotateMethodCall(element, holder)
             is Modifier -> annotateModifier(element, holder)
             is FunctionCall -> annotateFunctionCall(element, holder)
             is IncludeStatement, is ExtendsStatement, is InsertStatement ->
@@ -42,26 +45,68 @@ class SmartyAnnotator : Annotator {
     // ========================================================================
 
     /**
-     * Colors `$name` and every `.property` / `->property` of the access chain. The Smarty
-     * super global `$smarty` gets its own attributes so that `{$smarty.foreach.row.index}`
-     * is distinguishable from a template variable.
+     * Colors `$name`. The Smarty super global `$smarty` gets its own attributes so that
+     * `{$smarty.foreach.row.index}` is distinguishable from a template variable; the steps of
+     * the access chain behind it are colored by [annotateMemberAccess], which the annotator
+     * reaches on its own way down the tree.
      */
     private fun annotateVariable(element: Variable, holder: AnnotationHolder) {
-        val text = element.text
-        val offset = element.textRange.startOffset
-
-        val name = VARIABLE_NAME.find(text) ?: return
+        val name = VARIABLE_NAME.find(element.text) ?: return
         val attributes = if (name.groupValues[1].lowercase() in SmartyBuiltins.RESERVED_VARIABLES) {
             SmartySyntaxHighlighter.RESERVED_VARIABLE
         } else {
             SmartySyntaxHighlighter.VARIABLE
         }
-        highlight(holder, name.rangeIn(offset), attributes)
+        highlight(holder, name.rangeIn(element.textRange.startOffset), attributes)
+    }
 
-        for (property in PROPERTY_ACCESS.findAll(text)) {
-            val group = property.groups[1] ?: continue
-            highlight(holder, group.rangeIn(offset), SmartySyntaxHighlighter.PROPERTY)
+    // ========================================================================
+    // ACCESS CHAINS
+    // ========================================================================
+
+    /**
+     * Colors one step of an access chain, wherever the chain hangs: behind a variable in
+     * `{$obj->property}`, behind a class name in `{DynamicModal::SIZE}`, and behind the `@` of
+     * `{$row@index}`.
+     *
+     * Three steps are not this method's to color. A `[…]` subscript names nothing; a step whose
+     * name is a whole variable - `{$smarty.config.$key}` - colors itself through
+     * [annotateVariable]; and a call is a [MethodCall], which gets the color of a call rather
+     * than of a property.
+     */
+    private fun annotateMemberAccess(element: MemberAccess, holder: AnnotationHolder) {
+        val separator = meaningful(element.node.firstChildNode) ?: return
+        if (!SmartyTokenSets.ACCESS_SEPARATORS.contains(separator.elementType)) return
+
+        val name = meaningful(separator.treeNext) ?: return
+        if (name.firstChildNode != null) return
+
+        // Behind a `::` a plain word is a class constant - a static property is written with the
+        // `$` that makes it a variable, and colors itself as one.
+        val attributes = if (separator.elementType === SmartyTypes.DOUBLE_COLON) {
+            SmartySyntaxHighlighter.CONSTANT
+        } else {
+            SmartySyntaxHighlighter.PROPERTY
         }
+        highlight(holder, name.textRange, attributes)
+    }
+
+    /** Colors the name of `{$this->head()}` and of `{Foo::bar()}` like any other call. */
+    private fun annotateMethodCall(element: MethodCall, holder: AnnotationHolder) {
+        val separator = meaningful(element.node.firstChildNode) ?: return
+        val name = meaningful(separator.treeNext) ?: return
+        if (name.firstChildNode != null) return
+
+        highlight(holder, name.textRange, SmartySyntaxHighlighter.FUNCTION_CALL)
+    }
+
+    /** [node] itself, or the first of its following siblings that is not whitespace. */
+    private fun meaningful(node: ASTNode?): ASTNode? {
+        var current = node
+        while (current != null && SmartyTokenSets.WHITE_SPACES.contains(current.elementType)) {
+            current = current.treeNext
+        }
+        return current
     }
 
     // ========================================================================
@@ -125,6 +170,11 @@ class SmartyAnnotator : Annotator {
                 character == '"' || character == '\'' -> quote = character
                 character == '(' || character == '[' -> depth++
                 character == ')' || character == ']' -> depth--
+
+                // The `::` of `{$a|cat:Foo::BAR}` reaches a class member and separates nothing;
+                // counted as two parameters it would report a one-parameter modifier as taking
+                // three. Skipping the second colon keeps the pair out of the count entirely.
+                character == ':' && text.getOrNull(index + 1) == ':' -> index++
                 character == ':' && depth == 0 -> parameters++
             }
             index++
@@ -236,9 +286,6 @@ class SmartyAnnotator : Annotator {
 
         /** A whole leaf that could be a variable name; used by [annotateOrphanVariableName]. */
         private val BARE_NAME = Regex("""[a-zA-Z_]\w*""")
-
-        /** `@` is the third separator of an access chain: the loop property of `{$row@index}`. */
-        private val PROPERTY_ACCESS = Regex("""(?:\.|->|@)([a-zA-Z_]\w*)""")
 
         /** The optional `@` is the array-modifier prefix of `{$rows|@count}`. */
         private val MODIFIER_NAME = Regex("""^\|\s*@?\s*([a-zA-Z_]\w*)""")

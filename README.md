@@ -20,8 +20,8 @@ HTML, CSS and JavaScript support keeps working, and everything inside
 - **Syntax highlighting** driven by the lexer: delimiters, built-in tag names, modifiers, operators, numbers, strings,
   parentheses, brackets and comments.
 - **Semantic highlighting** driven by the PSI: template variables, the `$smarty` super global, property and `->` access
-  chains, modifier names, function calls, `{block}` and `{function}`
-  declarations, and config variables written as `{#name#}`.
+  chains, method calls and static class members (`{$this->head()}`, `{DynamicModal::SIZE}`), modifier names, function
+  calls, `{block}` and `{function}` declarations, and config variables written as `{#name#}`.
 - **Colour settings page** at *Settings | Editor | Color Scheme | Smarty*, with a live preview and 15 separately
   configurable attributes.
 - **Folding** for `{* multi-line comments *}`, `{literal}` and `{nocache}` blocks, and the body of every paired tag such

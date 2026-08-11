@@ -1,6 +1,9 @@
 package ch.erlebnisplus.smarty;
 
 import ch.erlebnisplus.smarty.psi.SmartyTypes;
+// The IDE's JFlex runner adds this one by itself, the plain jar does not - and %implements needs
+// it either way, so it is written here and both ways of regenerating produce the same file.
+import com.intellij.lexer.FlexLexer;
 import com.intellij.psi.tree.IElementType;
 
 %%
@@ -212,6 +215,11 @@ String               = \"([^\"\\]|\\[^])*\"|\'([^\'\\]|\\[^])*\'
     "|"                            { return SmartyTypes.PIPE; }
     "."                            { return SmartyTypes.DOT; }
     "->"                           { return SmartyTypes.ARROW; }
+    // Before the single colon, and JFlex would prefer it anyway: the longer match wins. `::`
+    // reaches a static class member, {DynamicModal::SIZE} and {Foo::bar()}; a lone `:` separates
+    // the parameters of a modifier and the two arms of a ternary, which is a different token
+    // everywhere it appears.
+    "::"                           { return SmartyTypes.DOUBLE_COLON; }
     ":"                            { return SmartyTypes.COLON; }
     "?"                            { return SmartyTypes.QUESTION; }
     ";"                            { return SmartyTypes.SEMICOLON; }

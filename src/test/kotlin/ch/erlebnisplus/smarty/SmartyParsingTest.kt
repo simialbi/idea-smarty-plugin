@@ -1,6 +1,7 @@
 package ch.erlebnisplus.smarty
 
 import ch.erlebnisplus.smarty.psi.ConfigVariable
+import ch.erlebnisplus.smarty.psi.MethodCall
 import ch.erlebnisplus.smarty.psi.Modifier
 import ch.erlebnisplus.smarty.psi.SmartyTypes
 import ch.erlebnisplus.smarty.psi.TextContent
@@ -202,6 +203,56 @@ class SmartyParsingTest : SmartyTestCase() {
 
     /** A plugin name is resolved at render time, so any word followed by attributes is a tag. */
     fun testPluginCall() = assertParses("{html_options values=\$a selected=\$b}{mailto address=\$to}")
+
+    // ---------------------------------------------------------------- objects and classes
+
+    /** Templates call methods on the objects they are given: `{$this->head()}`. */
+    fun testAMethodCallOnAnObject() = assertParses("{\$this->head()}")
+
+    /** A static member needs no call and no `$`: `{DynamicModal::SIZE_EXTRA_LARGE}`. */
+    fun testAStaticClassMember() = assertParses("{DynamicModal::SIZE_EXTRA_LARGE}")
+
+    fun testAStaticMethodCall() = assertParses("{Foo::bar()}")
+
+    /** A method may be named after a reserved word, and it is still a call. */
+    fun testAMethodNamedLikeAKeyword() = assertParses("{\$this->default()}{Foo::section()}")
+
+    /** Nothing about a call ends the expression it stands in. */
+    fun testCallsChainAndModify() =
+        assertParses("{\$this->head()->tail}{\$obj->method(\$a, 1)|escape}{Foo::bar()[0]}")
+
+    /** The `(` is what makes it a call; without one the same name is an ordinary property. */
+    fun testAPropertyIsNotACall() {
+        val file = myFixture.configureByText("test.tpl", "{\$this->head}")
+
+        assertNull(
+            "unexpected parse error in {\$this->head}",
+            PsiTreeUtil.findChildOfType(file, PsiErrorElement::class.java)
+        )
+        assertNull(
+            "{\$this->head} is a property, not a call:\n${DebugUtil.psiToString(file, true)}",
+            PsiTreeUtil.findChildOfType(file, MethodCall::class.java)
+        )
+    }
+
+    /** The name and the arguments of a call, as the PSI reports them. */
+    fun testAMethodCallKnowsItsNameAndArguments() {
+        val file = myFixture.configureByText("test.tpl", "{Foo::bar(\$x, 1)}")
+        val call = PsiTreeUtil.findChildOfType(file, MethodCall::class.java)
+
+        assertNotNull("no method call in\n${DebugUtil.psiToString(file, true)}", call)
+        assertEquals("bar", call!!.methodName)
+        assertEquals(listOf("\$x", "1"), call.methodArguments.toList())
+    }
+
+    /** A call is a step of the chain like any other, and is named by its method. */
+    fun testAMethodCallIsAStepOfThePropertyChain() {
+        val file = myFixture.configureByText("test.tpl", "{\$this->head()->tail}")
+        val variable = PsiTreeUtil.findChildOfType(file, Variable::class.java)
+
+        assertNotNull("no variable in\n${DebugUtil.psiToString(file, true)}", variable)
+        assertEquals(listOf("head", "tail"), variable!!.propertyChain.toList())
+    }
 
     /**
      * Modifiers bind to the operand, one chain link at a time. With the parameter as a full `expr`

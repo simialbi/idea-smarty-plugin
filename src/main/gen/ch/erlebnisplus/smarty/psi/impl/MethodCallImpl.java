@@ -11,14 +11,14 @@ import static ch.erlebnisplus.smarty.psi.SmartyTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import ch.erlebnisplus.smarty.psi.*;
 
-public class MemberAccessImpl extends ASTWrapperPsiElement implements MemberAccess {
+public class MethodCallImpl extends ASTWrapperPsiElement implements MethodCall {
 
-  public MemberAccessImpl(@NotNull ASTNode node) {
+  public MethodCallImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull Visitor visitor) {
-    visitor.visitMemberAccess(this);
+    visitor.visitMethodCall(this);
   }
 
   @Override
@@ -29,20 +29,26 @@ public class MemberAccessImpl extends ASTWrapperPsiElement implements MemberAcce
 
   @Override
   @Nullable
-  public ArrayAccess getArrayAccess() {
-    return findChildByClass(ArrayAccess.class);
-  }
-
-  @Override
-  @Nullable
-  public MethodCall getMethodCall() {
-    return findChildByClass(MethodCall.class);
+  public ArgumentList getArgumentList() {
+    return findChildByClass(ArgumentList.class);
   }
 
   @Override
   @Nullable
   public Variable getVariable() {
     return findChildByClass(Variable.class);
+  }
+
+  @Override
+  @NotNull
+  public String getMethodName() {
+    return SmartyPsiImplUtil.getMethodName(this);
+  }
+
+  @Override
+  @NotNull
+  public String[] getMethodArguments() {
+    return SmartyPsiImplUtil.getMethodArguments(this);
   }
 
 }

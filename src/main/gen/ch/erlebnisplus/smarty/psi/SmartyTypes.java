@@ -38,6 +38,7 @@ public interface SmartyTypes {
   IElementType LDELIM_RDELIM_STATEMENT = new SmartyElementType("LDELIM_RDELIM_STATEMENT");
   IElementType LITERAL = new SmartyElementType("LITERAL");
   IElementType MEMBER_ACCESS = new SmartyElementType("MEMBER_ACCESS");
+  IElementType METHOD_CALL = new SmartyElementType("METHOD_CALL");
   IElementType MODIFIER = new SmartyElementType("MODIFIER");
   IElementType PLUGIN_CALL_STATEMENT = new SmartyElementType("PLUGIN_CALL_STATEMENT");
   IElementType SECTIONELSE_STATEMENT = new SmartyElementType("SECTIONELSE_STATEMENT");
@@ -86,6 +87,7 @@ public interface SmartyTypes {
   IElementType DIV_KEYWORD = new SmartyTokenType("div");
   IElementType DOLLAR = new SmartyTokenType("$");
   IElementType DOT = new SmartyTokenType(".");
+  IElementType DOUBLE_COLON = new SmartyTokenType("::");
   IElementType ELSE = new SmartyTokenType("else");
   IElementType ELSEIF = new SmartyTokenType("elseif");
   IElementType EQ = new SmartyTokenType("==");
@@ -258,6 +260,9 @@ public interface SmartyTypes {
       }
       else if (type == MEMBER_ACCESS) {
         return new MemberAccessImpl(node);
+      }
+      else if (type == METHOD_CALL) {
+        return new MethodCallImpl(node);
       }
       else if (type == MODIFIER) {
         return new ModifierImpl(node);

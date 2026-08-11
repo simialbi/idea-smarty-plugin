@@ -214,9 +214,9 @@ class SmartySyntaxHighlighter : SyntaxHighlighterBase() {
          * operators - which is what the key was named after - and go unnoticed without a colour.
          */
         private val SEPARATORS = TokenSet.create(
-            SmartyTypes.PIPE, SmartyTypes.COLON, SmartyTypes.DOT, SmartyTypes.ARROW,
-            SmartyTypes.AT, SmartyTypes.COMMA, SmartyTypes.SEMICOLON, SmartyTypes.QUESTION,
-            SmartyTypes.ASSIGN, SmartyTypes.FAT_ARROW
+            SmartyTypes.PIPE, SmartyTypes.COLON, SmartyTypes.DOUBLE_COLON, SmartyTypes.DOT,
+            SmartyTypes.ARROW, SmartyTypes.AT, SmartyTypes.COMMA, SmartyTypes.SEMICOLON,
+            SmartyTypes.QUESTION, SmartyTypes.ASSIGN, SmartyTypes.FAT_ARROW
         )
 
         private val TAG_DELIMITERS = TokenSet.create(SmartyTypes.LDELIM, SmartyTypes.RDELIM)

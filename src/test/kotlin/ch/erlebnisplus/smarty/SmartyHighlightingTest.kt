@@ -1,5 +1,6 @@
 package ch.erlebnisplus.smarty
 
+import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.editor.colors.TextAttributesKey
 
 /**
@@ -61,6 +62,41 @@ class SmartyHighlightingTest : SmartyTestCase() {
         SmartySyntaxHighlighter.PROPERTY,
         "index"
     )
+
+    /** Every named step of a chain is a property, whichever separator reaches it. */
+    fun testEveryStepOfAChainIsColoured() = assertColoured(
+        "{\$user.name}{\$order->total}",
+        SmartySyntaxHighlighter.PROPERTY,
+        "name", "total"
+    )
+
+    /** A method is called, so it is coloured like a call and not like a property. */
+    fun testAMethodNameIsColouredLikeACall() = assertColoured(
+        "{\$this->head()}{Foo::bar(\$x)}",
+        SmartySyntaxHighlighter.FUNCTION_CALL,
+        "head", "bar"
+    )
+
+    /** Behind a `::` a plain word is a class constant; a static property would carry its own `$`. */
+    fun testAStaticMemberIsColouredLikeAConstant() = assertColoured(
+        "{DynamicModal::SIZE_EXTRA_LARGE}",
+        SmartySyntaxHighlighter.CONSTANT,
+        "SIZE_EXTRA_LARGE"
+    )
+
+    /**
+     * `::` separates nothing. Counted as two modifier parameters it made `{$a|cat:Foo::BAR}` -
+     * one argument - look like three and report a warning on valid code.
+     */
+    fun testAStaticMemberIsNotCountedAsAModifierParameter() {
+        myFixture.configureByText("test.tpl", "{\$a|cat:DynamicModal::SIZE}")
+
+        val problems = myFixture.doHighlighting()
+            .filter { it.severity !== HighlightSeverity.INFORMATION }
+            .map { it.description }
+
+        assertEquals(emptyList<String>(), problems)
+    }
 
     /**
      * The text of every range the annotator coloured with [key], in document order. Annotations

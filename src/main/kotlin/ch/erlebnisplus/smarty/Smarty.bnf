@@ -24,6 +24,7 @@
     COMMA = ","
     SEMICOLON = ";"
     COLON = ":"
+    DOUBLE_COLON = "::"
     QUESTION = "?"
 
     // Brackets
@@ -565,12 +566,34 @@ private variable_name ::=
 // the keywords, `{$smarty.config.$key}` needs a variable as the step, and `{$row@index}` is the
 // loop-property separator - a different `@` from the array-modifier prefix of `{$rows|@count}`,
 // which belongs to the modifier.
+//
+// `::` reaches a static class member. Nothing declares that the thing in front of it is a class:
+// `{DynamicModal::SIZE}` is an ordinary `IDENTIFIER` from `primary_expr` with this step behind it,
+// the same shape `{$object->property}` has behind its variable.
+//
+// The call form comes first, and has to: on `{$this->head}` it fails at the missing `(` before its
+// pin and the plain step matches instead, but with the plain step first it would match `head` and
+// leave the parentheses to whatever follows - which is the reported error.
 // https://smarty-php.github.io/smarty/stable/designers/language-variables/language-variables-smarty
+// https://smarty-php.github.io/smarty/stable/api/configuration/#static-classes
 member_access ::=
-    DOT property_name
+    method_call
+    | DOT property_name
     | ARROW property_name
+    | DOUBLE_COLON property_name
     | AT property_name
     | array_access
+
+// A method on an object or a static method on a class: `{$this->head()}`, `{Foo::bar($x)}`.
+//
+// It is its own element rather than a `function_call` behind a separator, because the two are not
+// the same thing to anything that reads the tree: a `function_call` names a Smarty or PHP function
+// that `SmartyBuiltins` knows and `{function}` declarations can be searched for, and a method name
+// belongs to a class this plugin never sees. The pin is on the `(`, so once a call is under way a
+// missing `)` is reported inside the call instead of dropping the whole step.
+method_call ::=
+    (ARROW | DOUBLE_COLON) property_name LPAREN [argument_list] RPAREN
+    {pin=3 methods=[getMethodName getMethodArguments]}
 
 private property_name ::=
     IDENTIFIER

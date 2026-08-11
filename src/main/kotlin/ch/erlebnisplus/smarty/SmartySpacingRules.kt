@@ -43,6 +43,9 @@ internal class SmartySpacingRules(settings: CodeStyleSettings) {
         .before(SmartyTypes.ARRAY_ACCESS).none()
         .after(SmartyTypes.DOT).none()
         .after(SmartyTypes.ARROW).none()
+        // `::` binds a class to its member as tightly as `->` binds an object to its property,
+        // and unlike the other separators it has a name on both sides: {DynamicModal::SIZE}.
+        .around(SmartyTypes.DOUBLE_COLON).none()
         .after(SmartyTypes.LBRACKET).none()
         .before(SmartyTypes.RBRACKET).none()
         .after(SmartyTypes.DOLLAR).none()
@@ -65,6 +68,11 @@ internal class SmartySpacingRules(settings: CodeStyleSettings) {
         .afterInside(SmartyTypes.LPAREN, SmartyTypes.FUNCTION_CALL)
         .spaceIf(common.SPACE_WITHIN_METHOD_CALL_PARENTHESES)
         .beforeInside(SmartyTypes.RPAREN, SmartyTypes.FUNCTION_CALL)
+        .spaceIf(common.SPACE_WITHIN_METHOD_CALL_PARENTHESES)
+        .beforeInside(SmartyTypes.LPAREN, SmartyTypes.METHOD_CALL).none()
+        .afterInside(SmartyTypes.LPAREN, SmartyTypes.METHOD_CALL)
+        .spaceIf(common.SPACE_WITHIN_METHOD_CALL_PARENTHESES)
+        .beforeInside(SmartyTypes.RPAREN, SmartyTypes.METHOD_CALL)
         .spaceIf(common.SPACE_WITHIN_METHOD_CALL_PARENTHESES)
         .afterInside(SmartyTypes.LPAREN, SmartyTypes.EXPR).none()
         .beforeInside(SmartyTypes.RPAREN, SmartyTypes.EXPR).none()

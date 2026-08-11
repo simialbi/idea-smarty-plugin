@@ -127,6 +127,10 @@ public class Visitor extends PsiElementVisitor {
     visitPsiElement(o);
   }
 
+  public void visitMethodCall(@NotNull MethodCall o) {
+    visitPsiElement(o);
+  }
+
   public void visitModifier(@NotNull Modifier o) {
     visitPsiElement(o);
   }

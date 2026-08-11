@@ -1628,25 +1628,29 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // DOT property_name
+  // method_call
+  //     | DOT property_name
   //     | ARROW property_name
+  //     | DOUBLE_COLON property_name
   //     | AT property_name
   //     | array_access
   public static boolean member_access(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "member_access")) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_, level_, _NONE_, MEMBER_ACCESS, "<member access>");
-    result_ = member_access_0(builder_, level_ + 1);
+    result_ = method_call(builder_, level_ + 1);
     if (!result_) result_ = member_access_1(builder_, level_ + 1);
     if (!result_) result_ = member_access_2(builder_, level_ + 1);
+    if (!result_) result_ = member_access_3(builder_, level_ + 1);
+    if (!result_) result_ = member_access_4(builder_, level_ + 1);
     if (!result_) result_ = array_access(builder_, level_ + 1);
     exit_section_(builder_, level_, marker_, result_, false, null);
     return result_;
   }
 
   // DOT property_name
-  private static boolean member_access_0(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "member_access_0")) return false;
+  private static boolean member_access_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "member_access_1")) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_);
     result_ = consumeToken(builder_, DOT);
@@ -1656,8 +1660,8 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   // ARROW property_name
-  private static boolean member_access_1(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "member_access_1")) return false;
+  private static boolean member_access_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "member_access_2")) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_);
     result_ = consumeToken(builder_, ARROW);
@@ -1666,15 +1670,59 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     return result_;
   }
 
+  // DOUBLE_COLON property_name
+  private static boolean member_access_3(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "member_access_3")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, DOUBLE_COLON);
+    result_ = result_ && property_name(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
   // AT property_name
-  private static boolean member_access_2(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "member_access_2")) return false;
+  private static boolean member_access_4(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "member_access_4")) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_);
     result_ = consumeToken(builder_, AT);
     result_ = result_ && property_name(builder_, level_ + 1);
     exit_section_(builder_, marker_, null, result_);
     return result_;
+  }
+
+  /* ********************************************************** */
+  // (ARROW | DOUBLE_COLON) property_name LPAREN [argument_list] RPAREN
+  public static boolean method_call(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "method_call")) return false;
+    if (!nextTokenIs(builder_, "<method call>", ARROW, DOUBLE_COLON)) return false;
+    boolean result_, pinned_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, METHOD_CALL, "<method call>");
+    result_ = method_call_0(builder_, level_ + 1);
+    result_ = result_ && property_name(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, LPAREN);
+    pinned_ = result_; // pin = 3
+    result_ = result_ && report_error_(builder_, method_call_3(builder_, level_ + 1));
+    result_ = pinned_ && consumeToken(builder_, RPAREN) && result_;
+    exit_section_(builder_, level_, marker_, result_, pinned_, null);
+    return result_ || pinned_;
+  }
+
+  // ARROW | DOUBLE_COLON
+  private static boolean method_call_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "method_call_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, ARROW);
+    if (!result_) result_ = consumeToken(builder_, DOUBLE_COLON);
+    return result_;
+  }
+
+  // [argument_list]
+  private static boolean method_call_3(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "method_call_3")) return false;
+    argument_list(builder_, level_ + 1);
+    return true;
   }
 
   /* ********************************************************** */
