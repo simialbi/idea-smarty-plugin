@@ -5,7 +5,6 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
-import com.intellij.openapi.editor.DefaultLanguageHighlighterColors
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
@@ -52,7 +51,7 @@ class SmartyAnnotator : Annotator {
 
         val name = VARIABLE_NAME.find(text) ?: return
         val attributes = if (name.groupValues[1].lowercase() in SmartyBuiltins.RESERVED_VARIABLES) {
-            DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL
+            SmartySyntaxHighlighter.RESERVED_VARIABLE
         } else {
             SmartySyntaxHighlighter.VARIABLE
         }
@@ -60,7 +59,7 @@ class SmartyAnnotator : Annotator {
 
         for (property in PROPERTY_ACCESS.findAll(text)) {
             val group = property.groups[1] ?: continue
-            highlight(holder, group.rangeIn(offset), DefaultLanguageHighlighterColors.INSTANCE_FIELD)
+            highlight(holder, group.rangeIn(offset), SmartySyntaxHighlighter.PROPERTY)
         }
     }
 
@@ -89,7 +88,7 @@ class SmartyAnnotator : Annotator {
             return
         }
 
-        highlight(holder, group.rangeIn(offset), SmartySyntaxHighlighter.KEY)
+        highlight(holder, group.rangeIn(offset), SmartySyntaxHighlighter.MODIFIER)
 
         val parameters = countParameters(element.text)
         if (parameters > maximumParameters) {
@@ -142,14 +141,14 @@ class SmartyAnnotator : Annotator {
         highlight(
             holder,
             group.rangeIn(element.textRange.startOffset),
-            DefaultLanguageHighlighterColors.FUNCTION_CALL
+            SmartySyntaxHighlighter.FUNCTION_CALL
         )
     }
 
     /** Colors the name of a `{block}` or `{function}` declaration. */
     private fun annotateDeclarationName(element: PsiElement, holder: AnnotationHolder) {
         val declaration = SmartyUtil.findDeclarationName(element) ?: return
-        highlight(holder, declaration.range, DefaultLanguageHighlighterColors.FUNCTION_DECLARATION)
+        highlight(holder, declaration.range, SmartySyntaxHighlighter.FUNCTION_DECLARATION)
     }
 
     // ========================================================================

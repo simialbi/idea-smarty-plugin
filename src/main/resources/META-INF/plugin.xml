@@ -16,6 +16,14 @@
 <h1>Smarty Plugin for IntelliJ IDEA</h1>
 
 <p>A real-time syntax highlighting and code completion plugin for Smarty templates with a color settings page and respecting indents.</p>
+
+<h2>Features</h2>
+<ul>
+    <li>Syntax highlighting</li>
+    <li>Code completion</li>
+    <li>Color settings page</li>
+    <li>Respects indents</li>
+</ul>
         ]]></description>
 
     <!-- Product and plugin compatibility requirements.
