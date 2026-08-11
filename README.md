@@ -13,7 +13,7 @@ HTML, CSS and JavaScript support keeps working, and everything inside
   <img src="https://raw.githubusercontent.com/simialbi/idea-smarty-plugin/master/resources/screenshot1.png" alt="Screenshot of a highlighted template" width="600">
   <br>
   <br>
-  <img src="https://raw.githubusercontent.com/simialbi/idea-smarty-plugin/master/resources/screenshot2.png" alt="Screenshot of setting page" width="600">
+  <img src="https://raw.githubusercontent.com/simialbi/idea-smarty-plugin/master/resources/screenshot2.png" alt="Screenshot of color settings page" width="600">
 </p>
 
 ## Features
