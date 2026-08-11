@@ -32,7 +32,6 @@ public interface SmartyTypes {
   IElementType FUNCTION_BODY = new SmartyElementType("FUNCTION_BODY");
   IElementType FUNCTION_CALL = new SmartyElementType("FUNCTION_CALL");
   IElementType FUNCTION_STATEMENT = new SmartyElementType("FUNCTION_STATEMENT");
-  IElementType HTML_CONTENT = new SmartyElementType("HTML_CONTENT");
   IElementType IF_STATEMENT = new SmartyElementType("IF_STATEMENT");
   IElementType INCLUDE_STATEMENT = new SmartyElementType("INCLUDE_STATEMENT");
   IElementType INSERT_STATEMENT = new SmartyElementType("INSERT_STATEMENT");
@@ -106,7 +105,6 @@ public interface SmartyTypes {
   IElementType GT = new SmartyTokenType(">");
   IElementType GT_KEYWORD = new SmartyTokenType("gt");
   IElementType HASH = new SmartyTokenType("#");
-  IElementType HTML_TAG = new SmartyTokenType("html_tag");
   IElementType IDENTIFIER = new SmartyTokenType("IDENTIFIER");
   IElementType IF = new SmartyTokenType("if");
   IElementType INCLUDE = new SmartyTokenType("include");
@@ -243,9 +241,6 @@ public interface SmartyTypes {
       }
       else if (type == FUNCTION_STATEMENT) {
         return new FunctionStatementImpl(node);
-      }
-      else if (type == HTML_CONTENT) {
-        return new HtmlContentImpl(node);
       }
       else if (type == IF_STATEMENT) {
         return new IfStatementImpl(node);

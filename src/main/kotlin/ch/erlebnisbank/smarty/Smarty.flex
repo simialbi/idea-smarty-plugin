@@ -66,16 +66,19 @@ String               = \"([^\"\\]|\\[^])*\"|\'([^\'\\]|\\[^])*\'
                                      return SmartyTypes.LDELIM;
                                    }
 
-    // HTML tags and text content
-    "<"[^>]+">"                    { return SmartyTypes.HTML_TAG; }
-
-    // Text content (everything else)
-    [^{<]+                         { return SmartyTypes.TEXT; }
-
-    // Single characters that aren't special
-    .                              { return SmartyTypes.TEXT; }
-
-    {LineTerminator}               { return SmartyTypes.TEXT; }
+    // Everything that is not a tag opener is template data - markup, text and the newlines
+    // between them alike. It has to be a single token type, because that is how the platform
+    // hands template data to a second language: TemplateDataElementType re-lexes the file and
+    // partitions it by comparing each token against one content element type.
+    //
+    // This also replaced a separate "<"[^>]+">" rule for HTML tags. That regex did not exclude
+    // "{", so the whole of <a href="{$url}"> lexed as one opaque tag token and every Smarty
+    // expression written inside an HTML attribute was invisible to the parser.
+    //
+    // The previous "." and {LineTerminator} rules are gone with it: this rule matches newlines
+    // and single characters too, and JFlex breaks equal-length ties by rule order, so they were
+    // unreachable. Coverage stays total - "{" is claimed by the rules above, the rest by this one.
+    [^{]+                          { return SmartyTypes.TEXT; }
 }
 
 // ============================================================================

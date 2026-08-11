@@ -152,7 +152,6 @@
     identifier = "regexp:[a-zA-Z_]\w*"
     number = "regexp:\d+(\.\d*)?([eE][+-]?\d+)?"
     string = "regexp:(\"([^\"\\\\]|\\\\.)*\"|'([^'\\\\]|\\\\.)*')"
-    html_tag = "regexp:<[^>]+>"
     whitespace = "regexp:\s+"
   ]
 
@@ -171,11 +170,11 @@ root_rule ::= template_item*
 private template_item ::=
     smarty_tag
     | text_content
-    | html_content
 
+// Everything outside a tag, markup included. There is no separate rule for HTML: the lexer emits
+// one token type for template data so that the platform can later hand that data to the HTML
+// parser as a second PSI root. Splitting markup out here would defeat that.
 text_content ::= TEXT+ {pin=1}
-
-html_content ::= html_tag {pin=1}
 
 // ============================================================================
 // SMARTY TAGS & COMMENTS
@@ -199,12 +198,10 @@ private closing_keyword ::=
 // builder skips it and the platform turns it into a PsiComment leaf of its own.
 
 smarty_literal_block ::=
-    '{' LITERAL_KW '}' verbatim_content* '{' '/' LITERAL_KW '}'
+    '{' LITERAL_KW '}' TEXT* '{' '/' LITERAL_KW '}'
     {pin=2 methods=[getLiteralContent]}
 
-smarty_nocache_block ::= '{' NOCACHE '}' verbatim_content* '{' '/' NOCACHE '}' {pin=2}
-
-private verbatim_content ::= TEXT | html_tag
+smarty_nocache_block ::= '{' NOCACHE '}' TEXT* '{' '/' NOCACHE '}' {pin=2}
 
 // ============================================================================
 // FUNCTION CALLS & STATEMENTS

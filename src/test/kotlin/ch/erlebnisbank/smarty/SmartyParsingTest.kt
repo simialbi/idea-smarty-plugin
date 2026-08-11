@@ -1,6 +1,8 @@
 package ch.erlebnisbank.smarty
 
 import ch.erlebnisbank.smarty.psi.SmartyTypes
+import ch.erlebnisbank.smarty.psi.TextContent
+import ch.erlebnisbank.smarty.psi.Variable
 import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.impl.DebugUtil
 import com.intellij.psi.util.PsiTreeUtil
@@ -99,6 +101,43 @@ class SmartyParsingTest : SmartyTestCase() {
         assertOneStringToken("\"a \\\" quote\"")
         assertOneStringToken("'it\\'s'")
         assertOneStringToken("\"back\\\\slash\"")
+    }
+
+    /**
+     * A tag inside an HTML attribute value is a tag. The lexer used to match markup with
+     * `"<"[^>]+">"`, which does not exclude `{`, so the whole of `<a href="{$url}">` collapsed
+     * into one opaque token and the expression in the attribute never reached the parser.
+     */
+    fun testTagsInsideAttributeValues() {
+        assertVariables("""<a href="{${'$'}url}">x</a>""", "${'$'}url")
+        assertVariables(
+            """<img src="{${'$'}base}/{${'$'}file|escape}" alt="{${'$'}alt}">""",
+            "${'$'}base", "${'$'}file", "${'$'}alt"
+        )
+        assertVariables("""<li class="{if ${'$'}active}on{/if}">""", "${'$'}active")
+    }
+
+    /** Markup is template data, not structure: one contiguous run is one text node. */
+    fun testMarkupIsOneTextRunBetweenTags() {
+        val file = myFixture.configureByText("test.tpl", "<p>a</p>{\$x}<p>b</p>")
+        val texts = PsiTreeUtil
+            .findChildrenOfType(file, TextContent::class.java)
+            .map { it.text }
+
+        assertEquals(listOf("<p>a</p>", "<p>b</p>"), texts)
+    }
+
+    /** Collects every VARIABLE in the file, in document order, as `$name`. */
+    private fun assertVariables(text: String, vararg expected: String) {
+        val file = myFixture.configureByText("test.tpl", text)
+        val error = PsiTreeUtil.findChildOfType(file, PsiErrorElement::class.java)
+        assertNull("unexpected parse error in $text", error)
+
+        val found = PsiTreeUtil
+            .findChildrenOfType(file, Variable::class.java)
+            .map { it.text }
+
+        assertEquals(expected.toList(), found)
     }
 
     /** Lexes the literal inside a tag and expects the whole of it to be a single STRING. */

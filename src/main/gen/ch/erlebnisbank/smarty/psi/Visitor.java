@@ -103,10 +103,6 @@ public class Visitor extends PsiElementVisitor {
     visitSmartyNamedElement(o);
   }
 
-  public void visitHtmlContent(@NotNull HtmlContent o) {
-    visitPsiElement(o);
-  }
-
   public void visitIfStatement(@NotNull IfStatement o) {
     visitPsiElement(o);
   }

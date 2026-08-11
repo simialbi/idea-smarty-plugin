@@ -1154,18 +1154,6 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // html_tag
-  public static boolean html_content(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "html_content")) return false;
-    if (!nextTokenIs(builder_, HTML_TAG)) return false;
-    boolean result_;
-    Marker marker_ = enter_section_(builder_);
-    result_ = consumeToken(builder_, HTML_TAG);
-    exit_section_(builder_, marker_, HTML_CONTENT, result_);
-    return result_;
-  }
-
-  /* ********************************************************** */
   // IF expr assign_clause*
   public static boolean if_statement(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "if_statement")) return false;
@@ -1888,7 +1876,7 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // '{' LITERAL_KW '}' verbatim_content* '{' '/' LITERAL_KW '}'
+  // '{' LITERAL_KW '}' TEXT* '{' '/' LITERAL_KW '}'
   public static boolean smarty_literal_block(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "smarty_literal_block")) return false;
     if (!nextTokenIs(builder_, LDELIM)) return false;
@@ -1902,19 +1890,19 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     return result_ || pinned_;
   }
 
-  // verbatim_content*
+  // TEXT*
   private static boolean smarty_literal_block_3(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "smarty_literal_block_3")) return false;
     while (true) {
       int pos_ = current_position_(builder_);
-      if (!verbatim_content(builder_, level_ + 1)) break;
+      if (!consumeToken(builder_, TEXT)) break;
       if (!empty_element_parsed_guard_(builder_, "smarty_literal_block_3", pos_)) break;
     }
     return true;
   }
 
   /* ********************************************************** */
-  // '{' NOCACHE '}' verbatim_content* '{' '/' NOCACHE '}'
+  // '{' NOCACHE '}' TEXT* '{' '/' NOCACHE '}'
   public static boolean smarty_nocache_block(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "smarty_nocache_block")) return false;
     if (!nextTokenIs(builder_, LDELIM)) return false;
@@ -1928,12 +1916,12 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     return result_ || pinned_;
   }
 
-  // verbatim_content*
+  // TEXT*
   private static boolean smarty_nocache_block_3(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "smarty_nocache_block_3")) return false;
     while (true) {
       int pos_ = current_position_(builder_);
-      if (!verbatim_content(builder_, level_ + 1)) break;
+      if (!consumeToken(builder_, TEXT)) break;
       if (!empty_element_parsed_guard_(builder_, "smarty_nocache_block_3", pos_)) break;
     }
     return true;
@@ -1974,13 +1962,12 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   /* ********************************************************** */
   // smarty_tag
   //     | text_content
-  //     | html_content
   static boolean template_item(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "template_item")) return false;
+    if (!nextTokenIs(builder_, "", LDELIM, TEXT)) return false;
     boolean result_;
     result_ = smarty_tag(builder_, level_ + 1);
     if (!result_) result_ = text_content(builder_, level_ + 1);
-    if (!result_) result_ = html_content(builder_, level_ + 1);
     return result_;
   }
 
@@ -2166,17 +2153,6 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     if (!recursion_guard_(builder_, level_, "variable_output_1")) return false;
     modifier_chain(builder_, level_ + 1);
     return true;
-  }
-
-  /* ********************************************************** */
-  // TEXT | html_tag
-  static boolean verbatim_content(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "verbatim_content")) return false;
-    if (!nextTokenIs(builder_, "", HTML_TAG, TEXT)) return false;
-    boolean result_;
-    result_ = consumeToken(builder_, TEXT);
-    if (!result_) result_ = consumeToken(builder_, HTML_TAG);
-    return result_;
   }
 
   /* ********************************************************** */

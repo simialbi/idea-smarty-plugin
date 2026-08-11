@@ -78,13 +78,13 @@ internal class SmartyBlock(
 
         /**
          * Nodes the formatter treats as one opaque run of text: the two verbatim blocks, plus
-         * the text and markup nodes, which hold no whitespace tokens to begin with.
+         * the template data node, which holds no whitespace tokens to begin with. Markup used to
+         * be listed here separately as HTML_CONTENT; it is part of the template data now.
          */
         val ATOMIC: TokenSet = TokenSet.create(
             SmartyTypes.SMARTY_LITERAL_BLOCK,
             SmartyTypes.SMARTY_NOCACHE_BLOCK,
-            SmartyTypes.TEXT_CONTENT,
-            SmartyTypes.HTML_CONTENT
+            SmartyTypes.TEXT_CONTENT
         )
     }
 }
