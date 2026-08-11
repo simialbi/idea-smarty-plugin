@@ -1,10 +1,13 @@
 package ch.erlebnisplus.smarty
 
 import ch.erlebnisplus.smarty.psi.ConfigVariable
+import ch.erlebnisplus.smarty.psi.Modifier
 import ch.erlebnisplus.smarty.psi.SmartyTypes
 import ch.erlebnisplus.smarty.psi.TextContent
 import ch.erlebnisplus.smarty.psi.Variable
+import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiErrorElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.DebugUtil
 import com.intellij.psi.util.PsiTreeUtil
 
@@ -111,12 +114,16 @@ class SmartyParsingTest : SmartyTestCase() {
             "#default#", "#section#", "#include#", "#if#"
         )
 
-    /**
-     * The indirect form: the key is whatever the variable holds. Only the key position gets the
-     * lexer state, so the variable's *own* name is still subject to the general keyword gap -
-     * `{#$section#}` does not parse, for the same reason `{$section}` does not.
-     */
+    /** The indirect form: the key is whatever the variable holds. */
     fun testConfigVariableFromAVariable() = assertConfigVariables("{#\$key#}", "#\$key#")
+
+    /**
+     * The variable's *own* name may be a keyword too, and it reaches the parser as that keyword's
+     * token rather than as an identifier. Only the key position gets a lexer state of its own, so
+     * this is the grammar's business, not the lexer's.
+     */
+    fun testConfigVariableFromAVariableNamedLikeAKeyword() =
+        assertConfigVariables("{#\$section#}", "#\$section#")
 
     fun testConfigVariableWithIndex() = assertParses("{#rows#[0]}")
 
@@ -157,6 +164,100 @@ class SmartyParsingTest : SmartyTestCase() {
             "${'$'}base", "${'$'}file", "${'$'}alt"
         )
         assertVariables("""<li class="{if ${'$'}active}on{/if}">""", "${'$'}active")
+    }
+
+    // ---------------------------------------------------------------- everyday Smarty
+
+    /**
+     * Each of these was rejected, and a single rejected tag used to cost the whole file: the root
+     * loop stops at the first token it cannot place and swallows everything after it, so no
+     * `Variable` node past that point exists for the annotator to colour. They are the constructs
+     * measured while tracking down "only the dollar sign is coloured", one test each.
+     */
+    fun testSectionWithAttributes() = assertParses("{section name=foo loop=\$bar}{/section}")
+
+    /** The bare form has to keep working, and it is the reason the attribute form is tried first. */
+    fun testBareSectionStillParses() = assertParses("{section rows}{/section}")
+
+    fun testIncludeWithAssign() = assertParses("{include file=\"a.tpl\" assign=\"out\"}")
+
+    fun testStrip() = assertParses("{strip}<p>{\$a}</p>{/strip}")
+
+    fun testCaptureWithName() = assertParses("{capture name=\"x\"}y{/capture}")
+
+    /** `{capture $x}` and `{capture}` both stay valid alongside the attribute form. */
+    fun testCaptureShorthandAndBare() = assertParses("{capture \$x}y{/capture}{capture}z{/capture}")
+
+    /** An access chain step may be a variable, and `config` is a reserved sub-key, not a keyword. */
+    fun testIndirectAccessChain() = assertParses("{\$smarty.config.\$foo}{\$smarty.capture.default}")
+
+    /** `@index` is the loop property of the current `{foreach}` item. */
+    fun testLoopProperty() = assertVariables(
+        "{foreach \$rows as \$row}{\$row@index}{/foreach}",
+        "\$rows", "\$row", "\$row@index"
+    )
+
+    /** `@` in front of a modifier applies it to the array rather than to each element. */
+    fun testArrayModifier() = assertParses("{\$rows|@count}")
+
+    /** A plugin name is resolved at render time, so any word followed by attributes is a tag. */
+    fun testPluginCall() = assertParses("{html_options values=\$a selected=\$b}{mailto address=\$to}")
+
+    /**
+     * Modifiers bind to the operand, one chain link at a time. With the parameter as a full `expr`
+     * the second link is swallowed into the first one's argument - `default` would be given
+     * `("-"|escape)` - which wrecks the tree silently and makes the annotator's parameter count
+     * fire on a perfectly good chain.
+     */
+    fun testAModifierChainDoesNotNestInItsArgument() {
+        val file = myFixture.configureByText("test.tpl", "{\$a|default:\"-\"|escape}")
+        val chain = PsiTreeUtil.findChildrenOfType(file, Modifier::class.java)
+
+        assertEquals(
+            "expected two sibling modifiers, got ${DebugUtil.psiToString(file, true)}",
+            listOf("|default:\"-\"", "|escape"),
+            chain.map { it.text }
+        )
+        assertEquals(2, chain.count { it.parent !is Modifier })
+    }
+
+    /**
+     * The regression test for the report this all started with. One tag the grammar cannot parse
+     * is one error, and everything behind it is still parsed - the markup is a node again and
+     * `$after` is a `Variable` the annotator can colour.
+     */
+    fun testOneBadTagCostsOneTag() {
+        val file = myFixture.configureByText("test.tpl", "{qqq zzz}<p>a</p>{\$after}")
+        val tree = DebugUtil.psiToString(file, true)
+
+        val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java)
+        assertEquals("expected exactly one error in\n$tree", 1, errors.size)
+
+        assertEquals(
+            listOf("<p>a</p>"),
+            PsiTreeUtil.findChildrenOfType(file, TextContent::class.java).map { it.text }
+        )
+        assertEquals(
+            listOf("\$after"),
+            PsiTreeUtil.findChildrenOfType(file, Variable::class.java).map { it.text }
+        )
+    }
+
+    /**
+     * A comment is a comment token, so the builder skips it and the platform hoists it out of
+     * whatever node was open. It has to land at file level: inside a `TEXT_CONTENT` it would be an
+     * interior leaf of a composite the formatter drops, and nothing would cover it - see
+     * [SmartyFormatterTest.testACommentInsideMarkupIsIndentedLikeTheMarkup].
+     */
+    fun testACommentInsideMarkupIsAFileLevelNode() {
+        val file = myFixture.configureByText("test.tpl", "<div>\n{* note *}\n<p>x</p>\n</div>\n")
+        val comment = PsiTreeUtil.findChildOfType(file, PsiComment::class.java)
+
+        assertNotNull("no comment in the tree", comment)
+        assertTrue(
+            "the comment is not a child of the file:\n${DebugUtil.psiToString(file, true)}",
+            comment!!.parent is PsiFile
+        )
     }
 
     /** Markup is template data, not structure: one contiguous run is one text node. */

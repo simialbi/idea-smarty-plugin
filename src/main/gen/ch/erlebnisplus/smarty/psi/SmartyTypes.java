@@ -39,7 +39,7 @@ public interface SmartyTypes {
   IElementType LITERAL = new SmartyElementType("LITERAL");
   IElementType MEMBER_ACCESS = new SmartyElementType("MEMBER_ACCESS");
   IElementType MODIFIER = new SmartyElementType("MODIFIER");
-  IElementType MODIFIER_CHAIN = new SmartyElementType("MODIFIER_CHAIN");
+  IElementType PLUGIN_CALL_STATEMENT = new SmartyElementType("PLUGIN_CALL_STATEMENT");
   IElementType SECTIONELSE_STATEMENT = new SmartyElementType("SECTIONELSE_STATEMENT");
   IElementType SECTION_STATEMENT = new SmartyElementType("SECTION_STATEMENT");
   IElementType SETFILTER_STATEMENT = new SmartyElementType("SETFILTER_STATEMENT");
@@ -48,6 +48,7 @@ public interface SmartyTypes {
   IElementType SMARTY_LITERAL_BLOCK = new SmartyElementType("SMARTY_LITERAL_BLOCK");
   IElementType SMARTY_NOCACHE_BLOCK = new SmartyElementType("SMARTY_NOCACHE_BLOCK");
   IElementType SMARTY_TAG = new SmartyElementType("SMARTY_TAG");
+  IElementType STRIP_STATEMENT = new SmartyElementType("STRIP_STATEMENT");
   IElementType SWITCH_STATEMENT = new SmartyElementType("SWITCH_STATEMENT");
   IElementType TEXT_CONTENT = new SmartyElementType("TEXT_CONTENT");
   IElementType VARIABLE = new SmartyElementType("VARIABLE");
@@ -80,8 +81,7 @@ public interface SmartyTypes {
   IElementType COUNT_WORDS = new SmartyTokenType("count_words");
   IElementType DATE_FORMAT = new SmartyTokenType("date_format");
   IElementType DEBUG = new SmartyTokenType("debug");
-  IElementType DEFAULT = new SmartyTokenType("DEFAULT");
-  IElementType DEFAULT_MOD = new SmartyTokenType("default");
+  IElementType DEFAULT = new SmartyTokenType("default");
   IElementType DIV = new SmartyTokenType("/");
   IElementType DIV_KEYWORD = new SmartyTokenType("div");
   IElementType DOLLAR = new SmartyTokenType("$");
@@ -121,7 +121,6 @@ public interface SmartyTypes {
   IElementType LT = new SmartyTokenType("<");
   IElementType LT_KEYWORD = new SmartyTokenType("lt");
   IElementType MATCHES = new SmartyTokenType("matches");
-  IElementType METHOD_CALL = new SmartyTokenType("method_call");
   IElementType MINUS = new SmartyTokenType("-");
   IElementType MOD = new SmartyTokenType("%");
   IElementType MOD_KEYWORD = new SmartyTokenType("mod");
@@ -263,8 +262,8 @@ public interface SmartyTypes {
       else if (type == MODIFIER) {
         return new ModifierImpl(node);
       }
-      else if (type == MODIFIER_CHAIN) {
-        return new ModifierChainImpl(node);
+      else if (type == PLUGIN_CALL_STATEMENT) {
+        return new PluginCallStatementImpl(node);
       }
       else if (type == SECTIONELSE_STATEMENT) {
         return new SectionelseStatementImpl(node);
@@ -289,6 +288,9 @@ public interface SmartyTypes {
       }
       else if (type == SMARTY_TAG) {
         return new SmartyTagImpl(node);
+      }
+      else if (type == STRIP_STATEMENT) {
+        return new StripStatementImpl(node);
       }
       else if (type == SWITCH_STATEMENT) {
         return new SwitchStatementImpl(node);

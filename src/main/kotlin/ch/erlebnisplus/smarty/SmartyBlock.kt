@@ -86,9 +86,10 @@ internal class SmartyBlock(
      * A Smarty tag is indented like the markup it stands in, and nothing else is indented at all.
      *
      * The depth test is the top-level case: a block whose grandparent is missing is a direct child
-     * of the file, so no markup encloses it and there is no reason to move it. Anything deeper is
-     * a child of one of the data language's blocks, and takes one step of indent inside it, exactly
-     * as that language's own children do.
+     * of the file, so no markup encloses it and there is no reason to move it. Anything deeper is a
+     * child of one of the data language's blocks, and is indented the way that block indents its own
+     * children - which is a question only the data language can answer, so
+     * [dataLanguageChildIndent] asks it.
      *
      * Tokens *inside* a `{...}` fall to the last branch. Nothing wraps them today - every wrap is
      * [com.intellij.formatting.WrapType.NONE] - so the continuation indent only decides where a
@@ -96,12 +97,50 @@ internal class SmartyBlock(
      */
     override fun getIndent(): Indent = when {
         parent?.parent == null -> Indent.getNoneIndent()
-        isTemplateItem() -> Indent.getNormalIndent()
+        isTemplateItem() -> dataLanguageChildIndent() ?: Indent.getNormalIndent()
         else -> Indent.getContinuationWithoutFirstIndent()
     }
 
+    /**
+     * How deep the markup enclosing this tag indents its children, or `null` if no markup does.
+     *
+     * A normal indent used to be assumed here, and it is wrong for every element listed under
+     * *Code Style | HTML | Other | Do not indent children of* - `html`, `body`, `thead`, `tbody`
+     * and `tfoot` by default. A `{foreach}` inside a `<tbody>` was pushed one level past the `<tr>`
+     * it generates, which is the mangled indentation a reformat produced.
+     *
+     * The answer comes from the wrapper's [Block.getChildAttributes], which forwards to the data
+     * language's own block for the enclosing element - for HTML that is `XmlTagBlock`, and its
+     * children's indent is exactly that setting. A wrapper that holds nothing but this tag has no
+     * opinion of its own and returns a `null` indent, hence the walk: the enclosing element may be
+     * one or several wrappers further up. `null` at the top of the walk means there is no markup
+     * around the tag at all.
+     */
+    private fun dataLanguageChildIndent(): Indent? {
+        var child: Block = this
+        var above = parent
+
+        while (above is DataLanguageBlockWrapper) {
+            val index = above.subBlocks.indexOf(child)
+            if (index < 0) return null
+
+            above.getChildAttributes(index).childIndent?.let { return it }
+
+            child = above
+            above = above.parent
+        }
+
+        return null
+    }
+
+    /**
+     * Where the caret lands when Enter is pressed inside this block, which has to agree with what
+     * [getIndent] would give a child there: the file indents nothing, and everything else is inside
+     * a `{...}`, where a hand-wrapped line continues the tag rather than opening a level.
+     */
     override fun getChildIndent(): Indent =
-        if (myNode.psi is PsiFile) Indent.getNoneIndent() else Indent.getNormalIndent()
+        if (myNode.psi is PsiFile) Indent.getNoneIndent()
+        else Indent.getContinuationWithoutFirstIndent()
 
     /**
      * Spacing between two Smarty blocks comes from [SmartySpacingRules]; between two blocks of the

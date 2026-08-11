@@ -11,32 +11,20 @@ import static ch.erlebnisplus.smarty.psi.SmartyTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import ch.erlebnisplus.smarty.psi.*;
 
-public class MemberAccessImpl extends ASTWrapperPsiElement implements MemberAccess {
+public class StripStatementImpl extends ASTWrapperPsiElement implements StripStatement {
 
-  public MemberAccessImpl(@NotNull ASTNode node) {
+  public StripStatementImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull Visitor visitor) {
-    visitor.visitMemberAccess(this);
+    visitor.visitStripStatement(this);
   }
 
   @Override
   public void accept(@NotNull PsiElementVisitor visitor) {
     if (visitor instanceof Visitor) accept((Visitor)visitor);
     else super.accept(visitor);
-  }
-
-  @Override
-  @Nullable
-  public ArrayAccess getArrayAccess() {
-    return findChildByClass(ArrayAccess.class);
-  }
-
-  @Override
-  @Nullable
-  public Variable getVariable() {
-    return findChildByClass(Variable.class);
   }
 
 }

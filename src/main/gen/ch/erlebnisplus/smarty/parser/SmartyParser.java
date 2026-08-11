@@ -7,6 +7,7 @@ import static ch.erlebnisplus.smarty.psi.SmartyTypes.*;
 import static com.intellij.lang.parser.GeneratedParserUtilBase.*;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.tree.TokenSet;
 import com.intellij.lang.PsiParser;
 import com.intellij.lang.LightPsiParser;
 
@@ -396,13 +397,13 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // IDENTIFIER '=' expr
+  // attribute_name '=' expr
   static boolean assign_clause(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "assign_clause")) return false;
-    if (!nextTokenIs(builder_, IDENTIFIER)) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_);
-    result_ = consumeTokens(builder_, 0, IDENTIFIER, ASSIGN);
+    result_ = attribute_name(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, ASSIGN);
     result_ = result_ && expr(builder_, level_ + 1);
     exit_section_(builder_, marker_, null, result_);
     return result_;
@@ -412,7 +413,6 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   // assign_clause (',' assign_clause)*
   static boolean assign_list(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "assign_list")) return false;
-    if (!nextTokenIs(builder_, IDENTIFIER)) return false;
     boolean result_, pinned_;
     Marker marker_ = enter_section_(builder_, level_, _NONE_);
     result_ = assign_clause(builder_, level_ + 1);
@@ -525,10 +525,9 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // (IDENTIFIER | NOCACHE) '=' expr | NOCACHE
+  // attribute_name '=' expr | NOCACHE
   static boolean attribute_clause(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "attribute_clause")) return false;
-    if (!nextTokenIs(builder_, "", IDENTIFIER, NOCACHE)) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_);
     result_ = attribute_clause_0(builder_, level_ + 1);
@@ -537,24 +536,26 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     return result_;
   }
 
-  // (IDENTIFIER | NOCACHE) '=' expr
+  // attribute_name '=' expr
   private static boolean attribute_clause_0(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "attribute_clause_0")) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_);
-    result_ = attribute_clause_0_0(builder_, level_ + 1);
+    result_ = attribute_name(builder_, level_ + 1);
     result_ = result_ && consumeToken(builder_, ASSIGN);
     result_ = result_ && expr(builder_, level_ + 1);
     exit_section_(builder_, marker_, null, result_);
     return result_;
   }
 
-  // IDENTIFIER | NOCACHE
-  private static boolean attribute_clause_0_0(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "attribute_clause_0_0")) return false;
+  /* ********************************************************** */
+  // IDENTIFIER
+  //     | keyword_name
+  static boolean attribute_name(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "attribute_name")) return false;
     boolean result_;
     result_ = consumeToken(builder_, IDENTIFIER);
-    if (!result_) result_ = consumeToken(builder_, NOCACHE);
+    if (!result_) result_ = keyword_name(builder_, level_ + 1);
     return result_;
   }
 
@@ -665,7 +666,7 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // CAPTURE variable assign_clause*
+  // CAPTURE [variable assign_clause* | attribute_clause+]
   public static boolean capture_statement(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "capture_statement")) return false;
     if (!nextTokenIs(builder_, "<capture statement>", CAPTURE)) return false;
@@ -673,21 +674,64 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     Marker marker_ = enter_section_(builder_, level_, _NONE_, CAPTURE_STATEMENT, "<capture statement>");
     result_ = consumeToken(builder_, CAPTURE);
     pinned_ = result_; // pin = 1
-    result_ = result_ && report_error_(builder_, variable(builder_, level_ + 1));
-    result_ = pinned_ && capture_statement_2(builder_, level_ + 1) && result_;
+    result_ = result_ && capture_statement_1(builder_, level_ + 1);
     exit_section_(builder_, level_, marker_, result_, pinned_, null);
     return result_ || pinned_;
   }
 
+  // [variable assign_clause* | attribute_clause+]
+  private static boolean capture_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "capture_statement_1")) return false;
+    capture_statement_1_0(builder_, level_ + 1);
+    return true;
+  }
+
+  // variable assign_clause* | attribute_clause+
+  private static boolean capture_statement_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "capture_statement_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = capture_statement_1_0_0(builder_, level_ + 1);
+    if (!result_) result_ = capture_statement_1_0_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // variable assign_clause*
+  private static boolean capture_statement_1_0_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "capture_statement_1_0_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = variable(builder_, level_ + 1);
+    result_ = result_ && capture_statement_1_0_0_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
   // assign_clause*
-  private static boolean capture_statement_2(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "capture_statement_2")) return false;
+  private static boolean capture_statement_1_0_0_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "capture_statement_1_0_0_1")) return false;
     while (true) {
       int pos_ = current_position_(builder_);
       if (!assign_clause(builder_, level_ + 1)) break;
-      if (!empty_element_parsed_guard_(builder_, "capture_statement_2", pos_)) break;
+      if (!empty_element_parsed_guard_(builder_, "capture_statement_1_0_0_1", pos_)) break;
     }
     return true;
+  }
+
+  // attribute_clause+
+  private static boolean capture_statement_1_0_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "capture_statement_1_0_1")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = attribute_clause(builder_, level_ + 1);
+    while (result_) {
+      int pos_ = current_position_(builder_);
+      if (!attribute_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "capture_statement_1_0_1", pos_)) break;
+    }
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
@@ -796,7 +840,7 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // CONFIG_LOAD [STRING] (assign_clause | section_attribute)*
+  // CONFIG_LOAD [STRING] assign_clause*
   public static boolean config_load_statement(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "config_load_statement")) return false;
     if (!nextTokenIs(builder_, CONFIG_LOAD)) return false;
@@ -817,24 +861,15 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     return true;
   }
 
-  // (assign_clause | section_attribute)*
+  // assign_clause*
   private static boolean config_load_statement_2(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "config_load_statement_2")) return false;
     while (true) {
       int pos_ = current_position_(builder_);
-      if (!config_load_statement_2_0(builder_, level_ + 1)) break;
+      if (!assign_clause(builder_, level_ + 1)) break;
       if (!empty_element_parsed_guard_(builder_, "config_load_statement_2", pos_)) break;
     }
     return true;
-  }
-
-  // assign_clause | section_attribute
-  private static boolean config_load_statement_2_0(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "config_load_statement_2_0")) return false;
-    boolean result_;
-    result_ = assign_clause(builder_, level_ + 1);
-    if (!result_) result_ = section_attribute(builder_, level_ + 1);
-    return result_;
   }
 
   /* ********************************************************** */
@@ -1161,7 +1196,9 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   //     | config_load_statement
   //     | debug_statement
   //     | setfilter_statement
+  //     | strip_statement
   //     | ldelim_rdelim_statement
+  //     | plugin_call_statement
   //     | variable_output
   public static boolean function_body(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "function_body")) return false;
@@ -1192,7 +1229,9 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     if (!result_) result_ = config_load_statement(builder_, level_ + 1);
     if (!result_) result_ = debug_statement(builder_, level_ + 1);
     if (!result_) result_ = setfilter_statement(builder_, level_ + 1);
+    if (!result_) result_ = strip_statement(builder_, level_ + 1);
     if (!result_) result_ = ldelim_rdelim_statement(builder_, level_ + 1);
+    if (!result_) result_ = plugin_call_statement(builder_, level_ + 1);
     if (!result_) result_ = variable_output(builder_, level_ + 1);
     exit_section_(builder_, level_, marker_, result_, false, null);
     return result_;
@@ -1370,6 +1409,74 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
+  // IF | ELSE | ELSEIF | FOREACH | FOREACHELSE | FOR | WHILE | SECTION | SECTIONELSE
+  //     | SWITCH | CASE | DEFAULT | BREAK | CONTINUE | BLOCK | FUNCTION | CALL | EXTENDS
+  //     | INCLUDE | INSERT | ASSIGN_KW | APPEND | PREPEND | CAPTURE | CONFIG_LOAD | DEBUG
+  //     | LITERAL_KW | NOCACHE | SETFILTER | STRIP | LDELIM_KW | RDELIM_KW | AS
+  //     | UPPER | LOWER | CAPITALIZE | CAT | COUNT_PARAGRAPHS | COUNT_SENTENCES | COUNT_WORDS
+  //     | DATE_FORMAT | ESCAPE | FROM_CHARSET | INDENT | NL2BR | REGEX_REPLACE | REPLACE
+  //     | SPACIFY | STRING_FORMAT | STRIP_TAGS | TO_CHARSET | TRUNCATE | UNESCAPE | WORDWRAP
+  static boolean keyword_name(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "keyword_name")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, IF);
+    if (!result_) result_ = consumeToken(builder_, ELSE);
+    if (!result_) result_ = consumeToken(builder_, ELSEIF);
+    if (!result_) result_ = consumeToken(builder_, FOREACH);
+    if (!result_) result_ = consumeToken(builder_, FOREACHELSE);
+    if (!result_) result_ = consumeToken(builder_, FOR);
+    if (!result_) result_ = consumeToken(builder_, WHILE);
+    if (!result_) result_ = consumeToken(builder_, SECTION);
+    if (!result_) result_ = consumeToken(builder_, SECTIONELSE);
+    if (!result_) result_ = consumeToken(builder_, SWITCH);
+    if (!result_) result_ = consumeToken(builder_, CASE);
+    if (!result_) result_ = consumeToken(builder_, DEFAULT);
+    if (!result_) result_ = consumeToken(builder_, BREAK);
+    if (!result_) result_ = consumeToken(builder_, CONTINUE);
+    if (!result_) result_ = consumeToken(builder_, BLOCK);
+    if (!result_) result_ = consumeToken(builder_, FUNCTION);
+    if (!result_) result_ = consumeToken(builder_, CALL);
+    if (!result_) result_ = consumeToken(builder_, EXTENDS);
+    if (!result_) result_ = consumeToken(builder_, INCLUDE);
+    if (!result_) result_ = consumeToken(builder_, INSERT);
+    if (!result_) result_ = consumeToken(builder_, ASSIGN_KW);
+    if (!result_) result_ = consumeToken(builder_, APPEND);
+    if (!result_) result_ = consumeToken(builder_, PREPEND);
+    if (!result_) result_ = consumeToken(builder_, CAPTURE);
+    if (!result_) result_ = consumeToken(builder_, CONFIG_LOAD);
+    if (!result_) result_ = consumeToken(builder_, DEBUG);
+    if (!result_) result_ = consumeToken(builder_, LITERAL_KW);
+    if (!result_) result_ = consumeToken(builder_, NOCACHE);
+    if (!result_) result_ = consumeToken(builder_, SETFILTER);
+    if (!result_) result_ = consumeToken(builder_, STRIP);
+    if (!result_) result_ = consumeToken(builder_, LDELIM_KW);
+    if (!result_) result_ = consumeToken(builder_, RDELIM_KW);
+    if (!result_) result_ = consumeToken(builder_, AS);
+    if (!result_) result_ = consumeToken(builder_, UPPER);
+    if (!result_) result_ = consumeToken(builder_, LOWER);
+    if (!result_) result_ = consumeToken(builder_, CAPITALIZE);
+    if (!result_) result_ = consumeToken(builder_, CAT);
+    if (!result_) result_ = consumeToken(builder_, COUNT_PARAGRAPHS);
+    if (!result_) result_ = consumeToken(builder_, COUNT_SENTENCES);
+    if (!result_) result_ = consumeToken(builder_, COUNT_WORDS);
+    if (!result_) result_ = consumeToken(builder_, DATE_FORMAT);
+    if (!result_) result_ = consumeToken(builder_, ESCAPE);
+    if (!result_) result_ = consumeToken(builder_, FROM_CHARSET);
+    if (!result_) result_ = consumeToken(builder_, INDENT);
+    if (!result_) result_ = consumeToken(builder_, NL2BR);
+    if (!result_) result_ = consumeToken(builder_, REGEX_REPLACE);
+    if (!result_) result_ = consumeToken(builder_, REPLACE);
+    if (!result_) result_ = consumeToken(builder_, SPACIFY);
+    if (!result_) result_ = consumeToken(builder_, STRING_FORMAT);
+    if (!result_) result_ = consumeToken(builder_, STRIP_TAGS);
+    if (!result_) result_ = consumeToken(builder_, TO_CHARSET);
+    if (!result_) result_ = consumeToken(builder_, TRUNCATE);
+    if (!result_) result_ = consumeToken(builder_, UNESCAPE);
+    if (!result_) result_ = consumeToken(builder_, WORDWRAP);
+    return result_;
+  }
+
+  /* ********************************************************** */
   // LDELIM_KW | RDELIM_KW
   public static boolean ldelim_rdelim_statement(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "ldelim_rdelim_statement")) return false;
@@ -1521,22 +1628,80 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // DOT IDENTIFIER
-  //     | ARROW IDENTIFIER
+  // DOT property_name
+  //     | ARROW property_name
+  //     | AT property_name
   //     | array_access
   public static boolean member_access(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "member_access")) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_, level_, _NONE_, MEMBER_ACCESS, "<member access>");
-    result_ = parseTokens(builder_, 0, DOT, IDENTIFIER);
-    if (!result_) result_ = parseTokens(builder_, 0, ARROW, IDENTIFIER);
+    result_ = member_access_0(builder_, level_ + 1);
+    if (!result_) result_ = member_access_1(builder_, level_ + 1);
+    if (!result_) result_ = member_access_2(builder_, level_ + 1);
     if (!result_) result_ = array_access(builder_, level_ + 1);
     exit_section_(builder_, level_, marker_, result_, false, null);
     return result_;
   }
 
+  // DOT property_name
+  private static boolean member_access_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "member_access_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, DOT);
+    result_ = result_ && property_name(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // ARROW property_name
+  private static boolean member_access_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "member_access_1")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, ARROW);
+    result_ = result_ && property_name(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // AT property_name
+  private static boolean member_access_2(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "member_access_2")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, AT);
+    result_ = result_ && property_name(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
   /* ********************************************************** */
-  // PIPE modifier_name [modifier_arguments]
+  // postfix_expr modifier*
+  static boolean modified_expr(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modified_expr")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
+    result_ = postfix_expr(builder_, level_ + 1);
+    result_ = result_ && modified_expr_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
+  }
+
+  // modifier*
+  private static boolean modified_expr_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modified_expr_1")) return false;
+    while (true) {
+      int pos_ = current_position_(builder_);
+      if (!modifier(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "modified_expr_1", pos_)) break;
+    }
+    return true;
+  }
+
+  /* ********************************************************** */
+  // PIPE [AT] modifier_name [modifier_arguments]
   public static boolean modifier(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "modifier")) return false;
     if (!nextTokenIs(builder_, PIPE)) return false;
@@ -1544,15 +1709,23 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     Marker marker_ = enter_section_(builder_, level_, _NONE_, MODIFIER, null);
     result_ = consumeToken(builder_, PIPE);
     pinned_ = result_; // pin = 1
-    result_ = result_ && report_error_(builder_, modifier_name(builder_, level_ + 1));
-    result_ = pinned_ && modifier_2(builder_, level_ + 1) && result_;
+    result_ = result_ && report_error_(builder_, modifier_1(builder_, level_ + 1));
+    result_ = pinned_ && report_error_(builder_, modifier_name(builder_, level_ + 1)) && result_;
+    result_ = pinned_ && modifier_3(builder_, level_ + 1) && result_;
     exit_section_(builder_, level_, marker_, result_, pinned_, null);
     return result_ || pinned_;
   }
 
+  // [AT]
+  private static boolean modifier_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_1")) return false;
+    consumeToken(builder_, AT);
+    return true;
+  }
+
   // [modifier_arguments]
-  private static boolean modifier_2(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "modifier_2")) return false;
+  private static boolean modifier_3(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_3")) return false;
     modifier_arguments(builder_, level_ + 1);
     return true;
   }
@@ -1582,23 +1755,6 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     result_ = consumeToken(builder_, COLON);
     result_ = result_ && modifier_param(builder_, level_ + 1);
     exit_section_(builder_, marker_, null, result_);
-    return result_;
-  }
-
-  /* ********************************************************** */
-  // modifier+
-  public static boolean modifier_chain(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "modifier_chain")) return false;
-    if (!nextTokenIs(builder_, PIPE)) return false;
-    boolean result_;
-    Marker marker_ = enter_section_(builder_);
-    result_ = modifier(builder_, level_ + 1);
-    while (result_) {
-      int pos_ = current_position_(builder_);
-      if (!modifier(builder_, level_ + 1)) break;
-      if (!empty_element_parsed_guard_(builder_, "modifier_chain", pos_)) break;
-    }
-    exit_section_(builder_, marker_, MODIFIER_CHAIN, result_);
     return result_;
   }
 
@@ -1639,44 +1795,37 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // UPPER | LOWER | CAPITALIZE | CAT | COUNT_PARAGRAPHS | COUNT_SENTENCES
-  //     | COUNT_WORDS | DATE_FORMAT | ESCAPE | FROM_CHARSET | INDENT
-  //     | NL2BR | REGEX_REPLACE | REPLACE | SPACIFY | STRING_FORMAT
-  //     | STRIP_TAGS | TO_CHARSET | TRUNCATE | UNESCAPE | WORDWRAP | DEFAULT_MOD
-  //     | IDENTIFIER
+  // attribute_name
   static boolean modifier_name(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "modifier_name")) return false;
-    boolean result_;
-    result_ = consumeToken(builder_, UPPER);
-    if (!result_) result_ = consumeToken(builder_, LOWER);
-    if (!result_) result_ = consumeToken(builder_, CAPITALIZE);
-    if (!result_) result_ = consumeToken(builder_, CAT);
-    if (!result_) result_ = consumeToken(builder_, COUNT_PARAGRAPHS);
-    if (!result_) result_ = consumeToken(builder_, COUNT_SENTENCES);
-    if (!result_) result_ = consumeToken(builder_, COUNT_WORDS);
-    if (!result_) result_ = consumeToken(builder_, DATE_FORMAT);
-    if (!result_) result_ = consumeToken(builder_, ESCAPE);
-    if (!result_) result_ = consumeToken(builder_, FROM_CHARSET);
-    if (!result_) result_ = consumeToken(builder_, INDENT);
-    if (!result_) result_ = consumeToken(builder_, NL2BR);
-    if (!result_) result_ = consumeToken(builder_, REGEX_REPLACE);
-    if (!result_) result_ = consumeToken(builder_, REPLACE);
-    if (!result_) result_ = consumeToken(builder_, SPACIFY);
-    if (!result_) result_ = consumeToken(builder_, STRING_FORMAT);
-    if (!result_) result_ = consumeToken(builder_, STRIP_TAGS);
-    if (!result_) result_ = consumeToken(builder_, TO_CHARSET);
-    if (!result_) result_ = consumeToken(builder_, TRUNCATE);
-    if (!result_) result_ = consumeToken(builder_, UNESCAPE);
-    if (!result_) result_ = consumeToken(builder_, WORDWRAP);
-    if (!result_) result_ = consumeToken(builder_, DEFAULT_MOD);
-    if (!result_) result_ = consumeToken(builder_, IDENTIFIER);
-    return result_;
+    return attribute_name(builder_, level_ + 1);
   }
 
   /* ********************************************************** */
-  // expr
+  // [PLUS | MINUS] postfix_expr
   static boolean modifier_param(PsiBuilder builder_, int level_) {
-    return expr(builder_, level_ + 1);
+    if (!recursion_guard_(builder_, level_, "modifier_param")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = modifier_param_0(builder_, level_ + 1);
+    result_ = result_ && postfix_expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // [PLUS | MINUS]
+  private static boolean modifier_param_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_param_0")) return false;
+    modifier_param_0_0(builder_, level_ + 1);
+    return true;
+  }
+
+  // PLUS | MINUS
+  private static boolean modifier_param_0_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "modifier_param_0_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, PLUS);
+    if (!result_) result_ = consumeToken(builder_, MINUS);
+    return result_;
   }
 
   /* ********************************************************** */
@@ -1737,35 +1886,15 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // IDENTIFIER '=' expr
+  // attribute_name '=' expr
   static boolean named_argument(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "named_argument")) return false;
-    if (!nextTokenIs(builder_, IDENTIFIER)) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_);
-    result_ = consumeTokens(builder_, 0, IDENTIFIER, ASSIGN);
+    result_ = attribute_name(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, ASSIGN);
     result_ = result_ && expr(builder_, level_ + 1);
     exit_section_(builder_, marker_, null, result_);
-    return result_;
-  }
-
-  /* ********************************************************** */
-  // !(PIPE | RDELIM)
-  static boolean not_pipe_or_rbrace(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "not_pipe_or_rbrace")) return false;
-    boolean result_;
-    Marker marker_ = enter_section_(builder_, level_, _NOT_);
-    result_ = !not_pipe_or_rbrace_0(builder_, level_ + 1);
-    exit_section_(builder_, level_, marker_, result_, false, null);
-    return result_;
-  }
-
-  // PIPE | RDELIM
-  private static boolean not_pipe_or_rbrace_0(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "not_pipe_or_rbrace_0")) return false;
-    boolean result_;
-    result_ = consumeToken(builder_, PIPE);
-    if (!result_) result_ = consumeToken(builder_, RDELIM);
     return result_;
   }
 
@@ -1800,6 +1929,34 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     boolean result_;
     Marker marker_ = enter_section_(builder_);
     result_ = consumeTokens(builder_, 0, COMMA, IDENTIFIER);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  /* ********************************************************** */
+  // IDENTIFIER attribute_clause+
+  public static boolean plugin_call_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "plugin_call_statement")) return false;
+    if (!nextTokenIs(builder_, "<plugin call>", IDENTIFIER)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, PLUGIN_CALL_STATEMENT, "<plugin call>");
+    result_ = consumeToken(builder_, IDENTIFIER);
+    result_ = result_ && plugin_call_statement_1(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
+  }
+
+  // attribute_clause+
+  private static boolean plugin_call_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "plugin_call_statement_1")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = attribute_clause(builder_, level_ + 1);
+    while (result_) {
+      int pos_ = current_position_(builder_);
+      if (!attribute_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "plugin_call_statement_1", pos_)) break;
+    }
     exit_section_(builder_, marker_, null, result_);
     return result_;
   }
@@ -1846,13 +2003,11 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   /* ********************************************************** */
   // member_access
   //     | array_access
-  //     | method_call
   static boolean postfix_op(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "postfix_op")) return false;
     boolean result_;
     result_ = member_access(builder_, level_ + 1);
     if (!result_) result_ = array_access(builder_, level_ + 1);
-    if (!result_) result_ = consumeToken(builder_, METHOD_CALL);
     return result_;
   }
 
@@ -1890,6 +2045,19 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
+  // IDENTIFIER
+  //     | variable
+  //     | keyword_name
+  static boolean property_name(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "property_name")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, IDENTIFIER);
+    if (!result_) result_ = variable(builder_, level_ + 1);
+    if (!result_) result_ = keyword_name(builder_, level_ + 1);
+    return result_;
+  }
+
+  /* ********************************************************** */
   // template_item*
   static boolean root_rule(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "root_rule")) return false;
@@ -1902,39 +2070,63 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // SECTION '=' expr
-  static boolean section_attribute(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "section_attribute")) return false;
-    if (!nextTokenIs(builder_, SECTION)) return false;
-    boolean result_;
-    Marker marker_ = enter_section_(builder_);
-    result_ = consumeTokens(builder_, 0, SECTION, ASSIGN);
-    result_ = result_ && expr(builder_, level_ + 1);
-    exit_section_(builder_, marker_, null, result_);
-    return result_;
-  }
-
-  /* ********************************************************** */
-  // SECTION IDENTIFIER assign_clause*
+  // SECTION (attribute_clause+ | IDENTIFIER assign_clause*)
   public static boolean section_statement(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "section_statement")) return false;
     if (!nextTokenIs(builder_, "<section loop>", SECTION)) return false;
     boolean result_, pinned_;
     Marker marker_ = enter_section_(builder_, level_, _NONE_, SECTION_STATEMENT, "<section loop>");
-    result_ = consumeTokens(builder_, 1, SECTION, IDENTIFIER);
+    result_ = consumeToken(builder_, SECTION);
     pinned_ = result_; // pin = 1
-    result_ = result_ && section_statement_2(builder_, level_ + 1);
+    result_ = result_ && section_statement_1(builder_, level_ + 1);
     exit_section_(builder_, level_, marker_, result_, pinned_, null);
     return result_ || pinned_;
   }
 
+  // attribute_clause+ | IDENTIFIER assign_clause*
+  private static boolean section_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "section_statement_1")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = section_statement_1_0(builder_, level_ + 1);
+    if (!result_) result_ = section_statement_1_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // attribute_clause+
+  private static boolean section_statement_1_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "section_statement_1_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = attribute_clause(builder_, level_ + 1);
+    while (result_) {
+      int pos_ = current_position_(builder_);
+      if (!attribute_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "section_statement_1_0", pos_)) break;
+    }
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // IDENTIFIER assign_clause*
+  private static boolean section_statement_1_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "section_statement_1_1")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, IDENTIFIER);
+    result_ = result_ && section_statement_1_1_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
   // assign_clause*
-  private static boolean section_statement_2(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "section_statement_2")) return false;
+  private static boolean section_statement_1_1_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "section_statement_1_1_1")) return false;
     while (true) {
       int pos_ = current_position_(builder_);
       if (!assign_clause(builder_, level_ + 1)) break;
-      if (!empty_element_parsed_guard_(builder_, "section_statement_2", pos_)) break;
+      if (!empty_element_parsed_guard_(builder_, "section_statement_1_1_1", pos_)) break;
     }
     return true;
   }
@@ -2054,14 +2246,25 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   //     | smarty_function_call
   public static boolean smarty_tag(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "smarty_tag")) return false;
-    if (!nextTokenIs(builder_, LDELIM)) return false;
     boolean result_;
-    Marker marker_ = enter_section_(builder_);
+    Marker marker_ = enter_section_(builder_, level_, _NONE_, SMARTY_TAG, "<smarty tag>");
     result_ = smarty_literal_block(builder_, level_ + 1);
     if (!result_) result_ = smarty_nocache_block(builder_, level_ + 1);
     if (!result_) result_ = smarty_closing_tag(builder_, level_ + 1);
     if (!result_) result_ = smarty_function_call(builder_, level_ + 1);
-    exit_section_(builder_, marker_, SMARTY_TAG, result_);
+    exit_section_(builder_, level_, marker_, result_, false, SmartyParser::tag_recover);
+    return result_;
+  }
+
+  /* ********************************************************** */
+  // STRIP
+  public static boolean strip_statement(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "strip_statement")) return false;
+    if (!nextTokenIs(builder_, STRIP)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = consumeToken(builder_, STRIP);
+    exit_section_(builder_, marker_, STRIP_STATEMENT, result_);
     return result_;
   }
 
@@ -2080,14 +2283,36 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
+  // !('{' | TEXT)
+  static boolean tag_recover(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "tag_recover")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_, level_, _NOT_);
+    result_ = !tag_recover_0(builder_, level_ + 1);
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
+  }
+
+  // '{' | TEXT
+  private static boolean tag_recover_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "tag_recover_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, LDELIM);
+    if (!result_) result_ = consumeToken(builder_, TEXT);
+    return result_;
+  }
+
+  /* ********************************************************** */
   // smarty_tag
   //     | text_content
   static boolean template_item(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "template_item")) return false;
     if (!nextTokenIs(builder_, "", LDELIM, TEXT)) return false;
     boolean result_;
+    Marker marker_ = enter_section_(builder_);
     result_ = smarty_tag(builder_, level_ + 1);
     if (!result_) result_ = text_content(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
     return result_;
   }
 
@@ -2167,31 +2392,26 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // TEXT+
+  // TEXT
   public static boolean text_content(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "text_content")) return false;
     if (!nextTokenIs(builder_, TEXT)) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_);
     result_ = consumeToken(builder_, TEXT);
-    while (result_) {
-      int pos_ = current_position_(builder_);
-      if (!consumeToken(builder_, TEXT)) break;
-      if (!empty_element_parsed_guard_(builder_, "text_content", pos_)) break;
-    }
     exit_section_(builder_, marker_, TEXT_CONTENT, result_);
     return result_;
   }
 
   /* ********************************************************** */
   // ((PLUS | MINUS | NOT | NOT_KEYWORD) unary_expr)
-  //     | postfix_expr
+  //     | modified_expr
   static boolean unary_expr(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "unary_expr")) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_, level_, _NONE_, null, "<expression>");
     result_ = unary_expr_0(builder_, level_ + 1);
-    if (!result_) result_ = postfix_expr(builder_, level_ + 1);
+    if (!result_) result_ = modified_expr(builder_, level_ + 1);
     exit_section_(builder_, level_, marker_, result_, false, null);
     return result_;
   }
@@ -2232,15 +2452,23 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // IDENTIFIER member_access*
+  // (IDENTIFIER | keyword_name) member_access*
   static boolean variable_name(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "variable_name")) return false;
-    if (!nextTokenIs(builder_, IDENTIFIER)) return false;
     boolean result_;
     Marker marker_ = enter_section_(builder_);
-    result_ = consumeToken(builder_, IDENTIFIER);
+    result_ = variable_name_0(builder_, level_ + 1);
     result_ = result_ && variable_name_1(builder_, level_ + 1);
     exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // IDENTIFIER | keyword_name
+  private static boolean variable_name_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "variable_name_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, IDENTIFIER);
+    if (!result_) result_ = keyword_name(builder_, level_ + 1);
     return result_;
   }
 
@@ -2256,23 +2484,14 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // expr modifier_chain?
+  // expr
   public static boolean variable_output(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "variable_output")) return false;
-    boolean result_, pinned_;
+    boolean result_;
     Marker marker_ = enter_section_(builder_, level_, _NONE_, VARIABLE_OUTPUT, "<variable output>");
     result_ = expr(builder_, level_ + 1);
-    pinned_ = result_; // pin = 1
-    result_ = result_ && variable_output_1(builder_, level_ + 1);
-    exit_section_(builder_, level_, marker_, result_, pinned_, null);
-    return result_ || pinned_;
-  }
-
-  // modifier_chain?
-  private static boolean variable_output_1(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "variable_output_1")) return false;
-    modifier_chain(builder_, level_ + 1);
-    return true;
+    exit_section_(builder_, level_, marker_, result_, false, null);
+    return result_;
   }
 
   /* ********************************************************** */

@@ -129,7 +129,6 @@
     TRUNCATE = "truncate"
     UNESCAPE = "unescape"
     WORDWRAP = "wordwrap"
-    DEFAULT_MOD = "default"
 
     // Special
     AT = "@"
@@ -174,17 +173,50 @@ private template_item ::=
 // Everything outside a tag, markup included. There is no separate rule for HTML: the lexer emits
 // one token type for template data so that the platform can later hand that data to the HTML
 // parser as a second PSI root. Splitting markup out here would defeat that.
-text_content ::= TEXT+ {pin=1}
+//
+// One node per token, deliberately. The lexer's rule is `[^{]+`, so two TEXT tokens can never abut
+// and a `+` here could only ever fold runs together *around a skipped comment* - which is exactly
+// what it did: `<div>{* note *}<p>x</p>` put the PsiComment inside a single TEXT_CONTENT as an
+// interior leaf, SmartyBlock dropped that composite in favour of the data language's blocks, and
+// nothing was left to cover the comment ("nonempty text is not covered by block"). Ending the node
+// at the comment leaves it a sibling at file level, where it gets a block of its own.
+text_content ::= TEXT
 
 // ============================================================================
 // SMARTY TAGS & COMMENTS
 // ============================================================================
 
+// One bad tag costs one tag, and nothing else.
+//
+// Without a recovery rule the parser stops at the first token it cannot place and the root's own
+// eat-more swallows everything after it into a single error element. Every Variable node past that
+// point stops existing, so SmartyAnnotator stops colouring variable names and only the lexer's `$`
+// is left - which is the whole of the "only the dollar sign is coloured" report. Smarty's plugin
+// namespace is open, so no grammar can be complete and this has to be survivable.
+//
+// The recovery belongs on *this* rule and on none of the four below, which is the opposite of what
+// it looks like it should be. `recoverWhile` runs whenever its rule fails, whether or not the rule
+// had committed to anything - and the first three alternatives fail on nearly every tag there is,
+// after consuming the `{`. Attached to them, `{$x}` went like this: `smarty_literal_block` consumed
+// `{`, missed `literal`, rolled back, and its recovery then ate the entire file as error content
+// before `smarty_function_call` was ever tried. Attached here the rule cannot misfire, because a
+// `{` always ends up in the pinned `smarty_function_call` and so this rule always succeeds; the
+// recovery is reached only with the tag closed and the parser standing on the junk after it.
+//
+// The predicate is a negative lookahead and consumes nothing: it only tells the generated recovery
+// loop to keep skipping while the next token can neither open a tag nor be template data. RDELIM is
+// deliberately absent - stopping at `}` would leave a stray `}` at top level that no template_item
+// can start with, the root loop would end there, and the rest of the file would be swallowed
+// exactly as before. On a tag that parsed, the next token is always `{`, TEXT or the end of the
+// file, so the predicate fails and recovery is a no-op.
 smarty_tag ::=
     smarty_literal_block
     | smarty_nocache_block
     | smarty_closing_tag
     | smarty_function_call
+    {recoverWhile=tag_recover}
+
+private tag_recover ::= !('{' | TEXT)
 
 // Closing tags are matched flat rather than as a nesting construct: the features built on this
 // PSI locate declarations by type, none of them need the block structure.
@@ -235,7 +267,9 @@ function_body ::=
     | config_load_statement
     | debug_statement
     | setfilter_statement
+    | strip_statement
     | ldelim_rdelim_statement
+    | plugin_call_statement
     | variable_output
 
 // ============================================================================
@@ -264,8 +298,15 @@ private for_increment ::= assignment
 
 while_statement ::= WHILE expr assign_clause* {pin=1 name="while loop"}
 
+// Both spellings: the attribute form every real template is written in,
+// {section name="rows" loop=$rows}, and the bare form {section rows loop=$rows}.
+//
+// The attribute alternative has to come first. The generated parser never backtracks into an
+// alternative that succeeded, so with the bare form first `name` would match IDENTIFIER, the `=`
+// would be left over and the tag would fail all over again.
+// https://smarty-php.github.io/smarty/stable/designers/language-builtin-functions/language-function-section
 section_statement ::=
-    SECTION IDENTIFIER assign_clause*
+    SECTION (attribute_clause+ | IDENTIFIER assign_clause*)
     {pin=1 name="section loop"}
 
 sectionelse_statement ::= SECTIONELSE {pin=1}
@@ -359,25 +400,24 @@ append_statement ::=
 
 private assign_shorthand ::= variable '=' expr assign_clause*
 
-// An attribute of the classic form. `nocache` is spelled out because the lexer gives it a keyword
-// token of its own, so it can never arrive as an assign_clause, and because it is also valid as a
+// An attribute of the classic form. `nocache` is repeated on its own because it is also valid as a
 // bare flag: {assign var="x" value=1 nocache}.
-private attribute_clause ::= (IDENTIFIER | NOCACHE) '=' expr | NOCACHE
+private attribute_clause ::= attribute_name '=' expr | NOCACHE
 
+// All three spellings: {capture}, which captures into `default`, the shorthand {capture $var}, and
+// the attribute form {capture name="x" assign="out"}. The order is free here - `variable` starts
+// with a `$`, which no attribute_clause can match.
+// https://smarty-php.github.io/smarty/stable/designers/language-builtin-functions/language-function-capture
 capture_statement ::=
-    CAPTURE variable assign_clause*
+    CAPTURE [variable assign_clause* | attribute_clause+]
     {pin=1 name="capture statement"}
 
-// The tag that makes config variables available. `section` is one of its documented attributes and
-// also one of this lexer's keywords, so `section="setup"` does not reach assign_clause, whose name
-// must be an IDENTIFIER - it is spelled out here instead. This is one instance of a general gap:
-// roughly sixty keywords cannot be used where an identifier is expected, and fixing it properly
-// means lexing them by context rather than patching each rule.
+// The tag that makes config variables available. Its `section` and `scope` attributes are keyword
+// tokens to the lexer; attribute_name is what lets them through.
+// https://smarty-php.github.io/smarty/stable/designers/language-builtin-functions/language-function-config-load
 config_load_statement ::=
-    CONFIG_LOAD [STRING] (assign_clause | section_attribute)*
+    CONFIG_LOAD [STRING] assign_clause*
     {pin=1}
-
-private section_attribute ::= SECTION '=' expr
 
 debug_statement ::= DEBUG [DEBUG_VARS] {pin=1}
 
@@ -387,29 +427,50 @@ setfilter_statement ::=
     SETFILTER modifier_list
     {pin=1}
 
+// {/strip} was already a closing_keyword; the opening tag had no rule at all, so a template that
+// used it lost everything after it.
+// https://smarty-php.github.io/smarty/stable/designers/language-builtin-functions/language-function-strip
+strip_statement ::= STRIP {pin=1}
+
 ldelim_rdelim_statement ::=
     LDELIM_KW | RDELIM_KW
+
+// A tag with no rule of its own: {html_options values=$a}, {mailto address=$to}, and whatever the
+// project's own plugin directory holds. Smarty resolves the name against its plugin directories at
+// render time, so the set is open and no grammar can enumerate it; an identifier followed by at
+// least one attribute is the shape they all share.
+//
+// It sits last in function_body so that every builtin still matches its own rule first, and it
+// requires an attribute so that a bare {foo} stays a variable_output.
+// https://smarty-php.github.io/smarty/stable/designers/language-custom-functions/
+plugin_call_statement ::=
+    IDENTIFIER attribute_clause+
+    {pin=2 name="plugin call"}
 
 // ============================================================================
 // VARIABLE OUTPUT
 // ============================================================================
 
+// A modifier chain is no longer part of this rule: it belongs to the value it modifies, at the
+// tightest binding level of the expression grammar, so that it can also be written on an attribute
+// value ({assign var="x" value=$y|escape}) or on one operand of a larger expression
+// ({$a + $b|round}). See modified_expr.
 variable_output ::=
-    expr modifier_chain?
+    expr
     {pin=1}
 
-modifier_chain ::= modifier+
-
+// `@` is the array-modifier prefix: {$rows|@count} applies count() to the array itself rather than
+// to each of its elements.
 modifier ::=
-    PIPE modifier_name [modifier_arguments]
+    PIPE [AT] modifier_name [modifier_arguments]
     {pin=1 methods=[getModifierName getModifierParams]}
 
-private modifier_name ::=
-    UPPER | LOWER | CAPITALIZE | CAT | COUNT_PARAGRAPHS | COUNT_SENTENCES
-    | COUNT_WORDS | DATE_FORMAT | ESCAPE | FROM_CHARSET | INDENT
-    | NL2BR | REGEX_REPLACE | REPLACE | SPACIFY | STRING_FORMAT
-    | STRIP_TAGS | TO_CHARSET | TRUNCATE | UNESCAPE | WORDWRAP | DEFAULT_MOD
-    | IDENTIFIER
+// `default` is why this cannot be a list of tokens: the lexer hands "default" to the `switch`
+// keyword long before a modifier rule is reached, which made the DEFAULT_MOD token unreachable and
+// {$title|default:"n/a"} unparsable. Any PHP function may be used as a modifier, so any word has to
+// be accepted here.
+// https://smarty-php.github.io/smarty/stable/designers/language-modifiers/
+private modifier_name ::= attribute_name
 
 // Modifier parameters are colon separated, one colon per parameter:
 // {$text|truncate:30:"...":true}. The rule used to allow a single colon followed by commas,
@@ -418,8 +479,13 @@ private modifier_name ::=
 private modifier_arguments ::=
     (COLON modifier_param)+
 
+// A parameter is a value, not a whole expression. Parsing it as one makes it greedy and it eats the
+// rest of the chain: `{$a|default:"-"|escape}` would attach `escape` to `"-"` instead of to `$a`,
+// which parses without complaint but builds the wrong tree and makes the annotator count the tail as
+// parameters of `default`. Stopping below modified_expr is what keeps a chain a chain. A sign is
+// allowed because {$n|truncate:-1} is written that way.
 private modifier_param ::=
-    expr
+    [PLUS | MINUS] postfix_expr
 
 // ============================================================================
 // EXPRESSIONS
@@ -459,7 +525,14 @@ private multiplicative_expr ::=
 
 private unary_expr ::=
     ((PLUS | MINUS | NOT | NOT_KEYWORD) unary_expr)
-    | postfix_expr
+    | modified_expr
+
+// A modifier binds to the value in front of it, not to the expression around it: {if $rows|count > 0}
+// compares the modified value, and {assign var="x" value=$y|escape} assigns the modified one. So the
+// chain lives at the tightest binding level, which is also what makes `{$a + $b|round}` mean
+// `$a + ($b|round)`, the way Smarty's own compiler reads it.
+private modified_expr ::=
+    postfix_expr modifier*
 
 private postfix_expr ::=
     primary_expr (postfix_op)*
@@ -467,7 +540,6 @@ private postfix_expr ::=
 private postfix_op ::=
     member_access
     | array_access
-    | method_call
 
 private primary_expr ::=
     variable
@@ -483,13 +555,27 @@ private primary_expr ::=
 
 variable ::= DOLLAR variable_name {methods=[getName hasArrayAccess getArrayIndices getPropertyChain]}
 
+// A variable may be named after a keyword - {$section}, {$default}, {$include} and {$call} are all
+// perfectly ordinary template variables - and nothing can be confused by it, because after a `$`
+// only a name can follow.
 private variable_name ::=
-    IDENTIFIER member_access*
+    (IDENTIFIER | keyword_name) member_access*
 
+// One step of an access chain. `{$smarty.section.rows.index}` and `{$smarty.capture.default}` need
+// the keywords, `{$smarty.config.$key}` needs a variable as the step, and `{$row@index}` is the
+// loop-property separator - a different `@` from the array-modifier prefix of `{$rows|@count}`,
+// which belongs to the modifier.
+// https://smarty-php.github.io/smarty/stable/designers/language-variables/language-variables-smarty
 member_access ::=
-    DOT IDENTIFIER
-    | ARROW IDENTIFIER
+    DOT property_name
+    | ARROW property_name
+    | AT property_name
     | array_access
+
+private property_name ::=
+    IDENTIFIER
+    | variable
+    | keyword_name
 
 array_access ::=
     LBRACKET array_index RBRACKET
@@ -502,11 +588,11 @@ private array_index ::=
 // The one kind of variable Smarty does not spell with a `$`: config variables come from the file
 // a {config_load} read and are written between hash marks. The rule that used to stand here was
 // `AT IDENTIFIER`, which is not Smarty syntax at all - `@` is the array-modifier prefix of
-// `{$rows|@count}` and the loop-property separator of `{$item@index}`, neither of which this
-// grammar covers yet.
+// `{$rows|@count}` and the loop-property separator of `{$item@index}`, and both of those now sit
+// where they belong, on `modifier` and on `member_access`.
 //
 // Nothing further is needed for `{#foo#[1]}` or `{#foo#|escape}`: an index follows from
-// `postfix_expr`, a modifier from `variable_output`, exactly as for a `$` variable.
+// `postfix_expr`, a modifier from `modified_expr`, exactly as for a `$` variable.
 //
 // https://smarty-php.github.io/smarty/stable/designers/language-variables/language-config-variables/
 config_variable ::= HASH config_variable_name HASH {pin=1}
@@ -532,7 +618,7 @@ argument_list ::=
     | positional_argument (',' positional_argument)*
 
 private named_argument ::=
-    IDENTIFIER '=' expr
+    attribute_name '=' expr
 
 private positional_argument ::=
     expr
@@ -566,14 +652,38 @@ private array_element ::=
 
 private assignment ::= variable ASSIGN expr
 
+// Every word this lexer has a keyword token for, usable as a name.
+//
+// Smarty puts these words exactly where the grammar wants an identifier - {include ... assign="x"},
+// {config_load ... section="setup"}, {html_options ... escape=false},
+// {$smarty.section.rows.index}, {$title|default:"n/a"} - and a rule that only accepts IDENTIFIER
+// rejects working templates and takes the rest of the file down with them. The previous fix was one
+// rule per collision; this is the general one.
+//
+// Admitting them is safe because every position that uses this rule either follows a `$`, a `.` or
+// a `|`, where nothing else can stand, or is followed by `=` or `:`: a keyword that opens a tag
+// cannot be mistaken for a name, because a name without its separator fails the alternative and the
+// parser moves on. The operator words - and, or, not, eq, mod, matches, ... - are deliberately
+// absent: no Smarty tag names an attribute after them, and keeping them out keeps the expression
+// rules unambiguous. So are true, false and null, which are values in their own right.
+private keyword_name ::=
+    IF | ELSE | ELSEIF | FOREACH | FOREACHELSE | FOR | WHILE | SECTION | SECTIONELSE
+    | SWITCH | CASE | DEFAULT | BREAK | CONTINUE | BLOCK | FUNCTION | CALL | EXTENDS
+    | INCLUDE | INSERT | ASSIGN_KW | APPEND | PREPEND | CAPTURE | CONFIG_LOAD | DEBUG
+    | LITERAL_KW | NOCACHE | SETFILTER | STRIP | LDELIM_KW | RDELIM_KW | AS
+    | UPPER | LOWER | CAPITALIZE | CAT | COUNT_PARAGRAPHS | COUNT_SENTENCES | COUNT_WORDS
+    | DATE_FORMAT | ESCAPE | FROM_CHARSET | INDENT | NL2BR | REGEX_REPLACE | REPLACE
+    | SPACIFY | STRING_FORMAT | STRIP_TAGS | TO_CHARSET | TRUNCATE | UNESCAPE | WORDWRAP
+
+private attribute_name ::=
+    IDENTIFIER
+    | keyword_name
+
 private assign_clause ::=
-    IDENTIFIER '=' expr
+    attribute_name '=' expr
 
 private assign_list ::=
     assign_clause (',' assign_clause)*
 
 private modifier_list ::=
     modifier (',' modifier)*
-
-private not_pipe_or_rbrace ::=
-    !(PIPE | RDELIM)

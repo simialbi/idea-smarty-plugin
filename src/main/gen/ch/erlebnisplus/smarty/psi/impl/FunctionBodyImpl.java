@@ -1,9 +1,13 @@
 // This is a generated file. Not intended for manual editing.
 package ch.erlebnisplus.smarty.psi.impl;
 
+import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
+import com.intellij.psi.util.PsiTreeUtil;
+import static ch.erlebnisplus.smarty.psi.SmartyTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import ch.erlebnisplus.smarty.psi.*;
 
@@ -151,6 +155,12 @@ public class FunctionBodyImpl extends ASTWrapperPsiElement implements FunctionBo
 
   @Override
   @Nullable
+  public PluginCallStatement getPluginCallStatement() {
+    return findChildByClass(PluginCallStatement.class);
+  }
+
+  @Override
+  @Nullable
   public SectionStatement getSectionStatement() {
     return findChildByClass(SectionStatement.class);
   }
@@ -165,6 +175,12 @@ public class FunctionBodyImpl extends ASTWrapperPsiElement implements FunctionBo
   @Nullable
   public SetfilterStatement getSetfilterStatement() {
     return findChildByClass(SetfilterStatement.class);
+  }
+
+  @Override
+  @Nullable
+  public StripStatement getStripStatement() {
+    return findChildByClass(StripStatement.class);
   }
 
   @Override

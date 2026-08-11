@@ -4,8 +4,10 @@ package ch.erlebnisplus.smarty.psi.impl;
 import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
+import static ch.erlebnisplus.smarty.psi.SmartyTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import ch.erlebnisplus.smarty.psi.*;
 
@@ -59,6 +61,12 @@ public class ExprImpl extends ASTWrapperPsiElement implements Expr {
   @NotNull
   public List<MemberAccess> getMemberAccessList() {
     return PsiTreeUtil.getChildrenOfTypeAsList(this, MemberAccess.class);
+  }
+
+  @Override
+  @NotNull
+  public List<Modifier> getModifierList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, Modifier.class);
   }
 
   @Override

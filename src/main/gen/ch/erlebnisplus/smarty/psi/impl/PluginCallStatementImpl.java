@@ -4,19 +4,21 @@ package ch.erlebnisplus.smarty.psi.impl;
 import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
+import static ch.erlebnisplus.smarty.psi.SmartyTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import ch.erlebnisplus.smarty.psi.*;
 
-public class ModifierChainImpl extends ASTWrapperPsiElement implements ModifierChain {
+public class PluginCallStatementImpl extends ASTWrapperPsiElement implements PluginCallStatement {
 
-  public ModifierChainImpl(@NotNull ASTNode node) {
+  public PluginCallStatementImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull Visitor visitor) {
-    visitor.visitModifierChain(this);
+    visitor.visitPluginCallStatement(this);
   }
 
   @Override
@@ -27,8 +29,8 @@ public class ModifierChainImpl extends ASTWrapperPsiElement implements ModifierC
 
   @Override
   @NotNull
-  public List<Modifier> getModifierList() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, Modifier.class);
+  public List<Expr> getExprList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, Expr.class);
   }
 
 }

@@ -50,13 +50,12 @@ internal class SmartySpacingRules(settings: CodeStyleSettings) {
         // A hash binds to its config key the way a dollar binds to a variable name: {#pageTitle#}.
         .aroundInside(SmartyTypes.HASH, SmartyTypes.CONFIG_VARIABLE).none()
 
-        // Nothing reaches this rule today: the lexer emits `@` but no grammar rule consumes it
-        // since config variables stopped being spelled with it. It is the answer the loop
-        // properties ({$item@index}) and array modifiers ({$rows|@count}) will want.
+        // `@` glues both ways round: to the loop property it introduces ({$item@index}, where the
+        // space in front is already gone through the MEMBER_ACCESS rule above) and to the array
+        // modifier it marks ({$rows|@count}, where the PIPE rule below closes the gap on its left).
         .after(SmartyTypes.AT).none()
 
         // Modifier chains are written without air: {$title|truncate:30:"..."|escape}
-        .before(SmartyTypes.MODIFIER_CHAIN).none()
         .before(SmartyTypes.MODIFIER).none()
         .aroundInside(SmartyTypes.PIPE, SmartyTypes.MODIFIER).none()
         .aroundInside(SmartyTypes.COLON, SmartyTypes.MODIFIER).none()

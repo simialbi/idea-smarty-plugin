@@ -26,6 +26,9 @@ public interface Expr extends PsiElement {
   List<MemberAccess> getMemberAccessList();
 
   @NotNull
+  List<Modifier> getModifierList();
+
+  @NotNull
   List<Variable> getVariableList();
 
   @Nullable

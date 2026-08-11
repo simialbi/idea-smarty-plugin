@@ -1,9 +1,13 @@
 // This is a generated file. Not intended for manual editing.
 package ch.erlebnisplus.smarty.psi.impl;
 
+import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
+import com.intellij.psi.util.PsiTreeUtil;
+import static ch.erlebnisplus.smarty.psi.SmartyTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import ch.erlebnisplus.smarty.psi.*;
 
@@ -27,12 +31,6 @@ public class VariableOutputImpl extends ASTWrapperPsiElement implements Variable
   @NotNull
   public Expr getExpr() {
     return findNotNullChildByClass(Expr.class);
-  }
-
-  @Override
-  @Nullable
-  public ModifierChain getModifierChain() {
-    return findChildByClass(ModifierChain.class);
   }
 
 }

@@ -94,6 +94,16 @@ class SmartyFormatterTest : SmartyTestCase() {
         "{\$user.name}{\$rows[0]}"
     )
 
+    /**
+     * `@` is tight on both sides but for two different reasons: in front of a loop property it is
+     * the third separator of an access chain, and in front of a modifier name it marks the modifier
+     * as applying to the array rather than to each element.
+     */
+    fun testLoopPropertiesAndArrayModifiersAreTight() = assertFormatted(
+        "{\$row @ index}{\$rows | @ count}",
+        "{\$row@index}{\$rows|@count}"
+    )
+
     /** A config variable's hash marks hug its key, the way a `$` hugs a variable name. */
     fun testConfigVariablesAreTight() = assertFormatted(
         "{# pageTitle #}{\$a|cat:# suffix #}",
@@ -156,6 +166,53 @@ class SmartyFormatterTest : SmartyTestCase() {
      */
     fun testWhitespaceInsidePreIsPreserved() = assertUnchanged(
         "<pre>\n     {\$code}     \n</pre>"
+    )
+
+    /**
+     * A tag inside an element HTML does not indent the children of.
+     *
+     * `html`, `body`, `thead`, `tbody` and `tfoot` are listed under *Code Style | HTML | Other | Do
+     * not indent children of*, so `<tr>` stays level with `<tbody>`. [SmartyBlock] used to assume a
+     * normal indent for every top-level Smarty item and pushed `{foreach}` one step past the `<tr>`
+     * it generates; it now asks the enclosing markup block how deep its children go. The `{foreach}`
+     * landing beside `<tr>` rather than around it is the flat-blocks gap of
+     * [testMarkupIsIndentedByTheDataLanguage], not this one.
+     */
+    fun testTagsStayLevelWithMarkupThatIsNotIndented() = assertFormatted(
+        """
+        <table>
+        <tbody>
+        {foreach ${'$'}rows as ${'$'}row}
+        <tr><td>{${'$'}row}</td></tr>
+        {/foreach}
+        </tbody>
+        </table>
+        """.trimIndent(),
+        """
+        <table>
+            <tbody>
+            {foreach ${'$'}rows as ${'$'}row}
+            <tr>
+                <td>{${'$'}row}</td>
+            </tr>
+            {/foreach}
+            </tbody>
+        </table>
+        """.trimIndent()
+    )
+
+    /**
+     * A comment between two runs of markup, which is the case that used to throw.
+     *
+     * The parser skips comment tokens, so a `text_content ::= TEXT+` spanning the runs on both
+     * sides made the `PsiComment` an interior leaf of a composite that [SmartyBlock] drops in favour
+     * of the HTML blocks - leaving no block over the comment at all ("nonempty text is not covered
+     * by block"). In the IDE that was a logged error and a formatter that carried on with a hole in
+     * its tree, which is the mangled indentation this fixes.
+     */
+    fun testACommentInsideMarkupIsIndentedLikeTheMarkup() = assertFormatted(
+        "<div>\n{* note *}\n<p>x</p>\n</div>",
+        "<div>\n    {* note *}\n    <p>x</p>\n</div>"
     )
 
     // ---------------------------------------------------------------- what stays untouched

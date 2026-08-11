@@ -145,12 +145,28 @@ class SmartyPsiImplUtil private constructor() {
         /**
          * The name of a variable, without the `$`.
          *
-         * `variable ::= DOLLAR IDENTIFIER member_access*`, so the name is simply the first
-         * identifier; everything after it belongs to the access chain.
+         * `variable ::= DOLLAR ((IDENTIFIER | keyword_name) member_access*)`, so the name is the
+         * one leaf between the `$` and the access chain. It is not always an `IDENTIFIER`: a
+         * variable may be named after a keyword, and `{$section}` or `{$default}` then carry that
+         * keyword's own token. Reading the leaf by position rather than by type is what keeps
+         * those named.
          */
         @JvmStatic
-        fun getName(element: Variable): String? =
-            element.node.findChildByType(SmartyTypes.IDENTIFIER)?.text
+        fun getName(element: Variable): String? {
+            var node = element.node.firstChildNode
+
+            while (node != null) {
+                val type = node.elementType
+
+                if (type !== SmartyTypes.DOLLAR && !SmartyTokenSets.WHITE_SPACES.contains(type)) {
+                    // A composite here means the name is missing and the chain starts right away.
+                    return if (node.firstChildNode == null) node.text else null
+                }
+                node = node.treeNext
+            }
+
+            return null
+        }
 
         /** Whether the variable is indexed, as in `$var['key']`. */
         @JvmStatic
@@ -166,12 +182,41 @@ class SmartyPsiImplUtil private constructor() {
                 }
                 .toTypedArray()
 
-        /** The property names of `$obj.property->nested`, in source order. */
+        /**
+         * The property names of `$obj.property->nested`, in source order.
+         *
+         * Only the steps of *this* variable's own chain count, so the children are read directly
+         * rather than searched for: `{$smarty.config.$key}` has a whole `variable` nested in its
+         * last step, and a deep search would report that variable's chain as part of this one.
+         * A step is named by whatever follows its separator - an identifier, a keyword, or a
+         * nested variable - and a `[…]` step names nothing and is left to [getArrayIndices].
+         */
         @JvmStatic
         fun getPropertyChain(element: Variable): Array<String> =
-            PsiTreeUtil.findChildrenOfType(element, MemberAccess::class.java)
-                .mapNotNull { access -> access.node.findChildByType(SmartyTypes.IDENTIFIER)?.text }
+            PsiTreeUtil.getChildrenOfTypeAsList(element, MemberAccess::class.java)
+                .mapNotNull { access -> propertyStepName(access) }
                 .toTypedArray()
+
+        /** The name behind the `.`, `->` or `@` of one access step; `null` for a `[…]` step. */
+        private fun propertyStepName(access: MemberAccess): String? {
+            var node = access.node.firstChildNode
+            var seenSeparator = false
+
+            while (node != null) {
+                val type = node.elementType
+
+                if (!SmartyTokenSets.WHITE_SPACES.contains(type)) {
+                    if (seenSeparator) return node.text
+                    if (type !== SmartyTypes.DOT && type !== SmartyTypes.ARROW && type !== SmartyTypes.AT) {
+                        return null
+                    }
+                    seenSeparator = true
+                }
+                node = node.treeNext
+            }
+
+            return null
+        }
 
         // ========================================================================
         // EXPRESSION METHODS
@@ -276,48 +321,58 @@ class SmartyPsiImplUtil private constructor() {
         // ========================================================================
 
         /**
-         * Gets the name of a modifier.
+         * The name of a modifier, as written.
+         *
+         * `modifier ::= PIPE [AT] modifier_name [modifier_arguments]`, and the name is any word:
+         * every Smarty modifier the lexer knows has a token of its own (`|wordwrap` is a
+         * `WORDWRAP`, not an `IDENTIFIER`), a modifier may be named after a tag keyword
+         * (`|default`), and it may equally be a PHP function the plugin has never heard of. So
+         * the name is read by position - the first thing that is neither the `|` nor the `@`
+         * prefix - rather than by token type.
          */
         @JvmStatic
         fun getModifierName(element: Modifier): String {
-            var node = element.node.findChildByType(SmartyTypes.IDENTIFIER)
-            if (node == null) {
-                // Check for built-in modifiers
-                node = element.node.firstChildNode
-                while (node != null) {
-                    val type = node.elementType
-                    if (type === SmartyTypes.UPPER || type === SmartyTypes.LOWER ||
-                        type === SmartyTypes.CAPITALIZE || type === SmartyTypes.ESCAPE ||
-                        type === SmartyTypes.DATE_FORMAT || type === SmartyTypes.TRUNCATE
-                    ) {
-                        return node.text
-                    }
-                    node = node.treeNext
+            var node = element.node.firstChildNode
+
+            while (node != null) {
+                val type = node.elementType
+
+                if (type !== SmartyTypes.PIPE && type !== SmartyTypes.AT &&
+                    !SmartyTokenSets.WHITE_SPACES.contains(type)
+                ) {
+                    return node.text
                 }
+                node = node.treeNext
             }
-            return node?.text ?: ""
+
+            return ""
         }
 
         /**
-         * Gets modifier parameters.
+         * The parameters of a modifier, in source order and as written: `["30", "\"...\""]` for
+         * `|truncate:30:"..."`.
+         *
+         * One colon introduces one parameter, and a parameter is a value rather than a whole
+         * expression, so the parameters are exactly the runs between the modifier's own top level
+         * colons. Reading them as runs is what keeps a parameter with more than one node in it -
+         * `-1`, or `$a.b` - in one piece.
          */
         @JvmStatic
         fun getModifierParams(element: Modifier): Array<String> {
             val params = mutableListOf<String>()
-            var node = element.node.findChildByType(SmartyTypes.COLON)
+            var node = element.node.firstChildNode
+            var current: StringBuilder? = null
 
-            if (node != null) {
-                node = node.treeNext
-                while (node != null && node.elementType !== SmartyTypes.PIPE) {
-                    if (node.elementType === SmartyTypes.STRING ||
-                        node.elementType === SmartyTypes.IDENTIFIER ||
-                        node.elementType === SmartyTypes.VARIABLE
-                    ) {
-                        params.add(node.text)
-                    }
-                    node = node.treeNext
+            while (node != null) {
+                if (node.elementType === SmartyTypes.COLON) {
+                    current?.let { params.add(it.toString().trim()) }
+                    current = StringBuilder()
+                } else {
+                    current?.append(node.text)
                 }
+                node = node.treeNext
             }
+            current?.let { params.add(it.toString().trim()) }
 
             return params.toTypedArray()
         }

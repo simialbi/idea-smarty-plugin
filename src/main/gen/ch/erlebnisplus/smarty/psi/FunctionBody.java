@@ -1,6 +1,7 @@
 // This is a generated file. Not intended for manual editing.
 package ch.erlebnisplus.smarty.psi;
 
+import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
 
@@ -70,6 +71,9 @@ public interface FunctionBody extends PsiElement {
   LdelimRdelimStatement getLdelimRdelimStatement();
 
   @Nullable
+  PluginCallStatement getPluginCallStatement();
+
+  @Nullable
   SectionStatement getSectionStatement();
 
   @Nullable
@@ -77,6 +81,9 @@ public interface FunctionBody extends PsiElement {
 
   @Nullable
   SetfilterStatement getSetfilterStatement();
+
+  @Nullable
+  StripStatement getStripStatement();
 
   @Nullable
   SwitchStatement getSwitchStatement();

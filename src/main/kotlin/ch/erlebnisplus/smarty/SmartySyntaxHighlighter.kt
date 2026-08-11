@@ -196,7 +196,7 @@ class SmartySyntaxHighlighter : SyntaxHighlighterBase() {
          * Any PHP function may be used as a modifier, so this is a head start rather than the whole
          * list - [SmartyAnnotator] colours the rest from [SmartyBuiltins] and warns about the names
          * it does not know. `default` is missing because the lexer hands `default` to the `switch`
-         * keyword before the modifier rule is reached.
+         * keyword, so `{$x|default:"n/a"}` is coloured by the annotator rather than from here.
          */
         private val MODIFIER_NAMES = TokenSet.create(
             SmartyTypes.UPPER, SmartyTypes.LOWER, SmartyTypes.CAPITALIZE, SmartyTypes.CAT,
@@ -210,12 +210,12 @@ class SmartySyntaxHighlighter : SyntaxHighlighterBase() {
 
         /**
          * The punctuation that joins one part of a tag to the next: the `|` and `:` of a modifier
-         * chain, the `.` and `->` of an access chain, the `=` of an attribute. They read as
+         * chain, the `.`, `->` and `@` of an access chain, the `=` of an attribute. They read as
          * operators - which is what the key was named after - and go unnoticed without a colour.
          */
         private val SEPARATORS = TokenSet.create(
             SmartyTypes.PIPE, SmartyTypes.COLON, SmartyTypes.DOT, SmartyTypes.ARROW,
-            SmartyTypes.COMMA, SmartyTypes.SEMICOLON, SmartyTypes.QUESTION,
+            SmartyTypes.AT, SmartyTypes.COMMA, SmartyTypes.SEMICOLON, SmartyTypes.QUESTION,
             SmartyTypes.ASSIGN, SmartyTypes.FAT_ARROW
         )
 

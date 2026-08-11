@@ -8,7 +8,25 @@ import com.intellij.psi.PsiElement;
 public interface Modifier extends PsiElement {
 
   @NotNull
+  List<ArrayAccess> getArrayAccessList();
+
+  @NotNull
+  List<ConfigVariable> getConfigVariableList();
+
+  @NotNull
   List<Expr> getExprList();
+
+  @NotNull
+  List<FunctionCall> getFunctionCallList();
+
+  @NotNull
+  List<Literal> getLiteralList();
+
+  @NotNull
+  List<MemberAccess> getMemberAccessList();
+
+  @NotNull
+  List<Variable> getVariableList();
 
   @NotNull
   String getModifierName();

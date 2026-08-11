@@ -90,8 +90,7 @@ class SmartyColorSettingsPage : ColorSettingsPage {
         /**
          * Valid Smarty that this plugin parses, so it can be pasted into a `.tpl` file and still be
          * a working template. Modifier names such as `escape` have a token of their own, which is
-         * why they need no marker; `{$row@index}` and `{$rows|@count}` are missing because the
-         * grammar does not cover `@` yet.
+         * why they need no marker.
          */
         val DEMO_TEXT = """
             {* Comments never reach the browser: they are stripped when the template renders. *}
@@ -103,7 +102,8 @@ class SmartyColorSettingsPage : ColorSettingsPage {
             {if <call>count</call>(${'$'}<var>rows</var>) gt 0 and not ${'$'}<var>hideList</var>}
               <ul>
               {foreach ${'$'}<var>rows</var> as ${'$'}<var>row</var>}
-                <li>{${'$'}<var>row</var>.<prop>title</prop>|escape:"html"|truncate:40:"..."}</li>
+                <li>{${'$'}<var>row</var>@<prop>index</prop>}:
+                    {${'$'}<var>row</var>.<prop>title</prop>|escape:"html"|truncate:40:"..."}</li>
               {foreachelse}
                 <li>{#<config>emptyMessage</config>#}</li>
               {/foreach}

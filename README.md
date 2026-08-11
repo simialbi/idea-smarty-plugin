@@ -157,15 +157,12 @@ the settings dialog.
 
 The grammar does not yet cover everything Smarty allows. The following constructs parse as errors today:
 
-- A modifier on any value, for example `{assign var="x" value=$y|escape}` or `{$a + $b|round}` —
-  `|` is only accepted directly after a variable that stands on its own.
-- `{strip}` — the closing `{/strip}` is recognised, the opening tag is not.
-- Reserved words where an identifier or a value is expected, for example
-  `{$x|default:"n/a"}`, `{section name=foo loop=$bar}`, `nocache=true` and `{#$section#}`. Fixing this properly needs
-  context-sensitive lexing.
-- `{$item@index}` and `{$arr|@count}` — the `@` forms.
-- `{$smarty.config.$foo}` — a variable as the last step of an access chain.
-- `auto_literal`, where a `{` followed by whitespace is output verbatim.
+- `auto_literal`, where a `{` followed by whitespace is output verbatim. Every `{` starts a tag as far as the lexer is
+  concerned, so a lone brace in the markup — `body { color: red }` in an inline stylesheet, for instance — is read as
+  Smarty.
+
+A tag the grammar cannot parse costs that one tag and nothing more: the parser recovers at the next `{` or run of
+markup, so the rest of the file is still parsed, highlighted and completed.
 
 Other gaps:
 

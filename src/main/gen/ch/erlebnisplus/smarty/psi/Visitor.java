@@ -131,7 +131,7 @@ public class Visitor extends PsiElementVisitor {
     visitPsiElement(o);
   }
 
-  public void visitModifierChain(@NotNull ModifierChain o) {
+  public void visitPluginCallStatement(@NotNull PluginCallStatement o) {
     visitPsiElement(o);
   }
 
@@ -164,6 +164,10 @@ public class Visitor extends PsiElementVisitor {
   }
 
   public void visitSmartyTag(@NotNull SmartyTag o) {
+    visitPsiElement(o);
+  }
+
+  public void visitStripStatement(@NotNull StripStatement o) {
     visitPsiElement(o);
   }
 

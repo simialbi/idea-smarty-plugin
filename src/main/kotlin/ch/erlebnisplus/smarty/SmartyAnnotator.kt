@@ -9,6 +9,7 @@ import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.TokenType
+import com.intellij.psi.util.PsiTreeUtil
 
 /**
  * Adds semantic highlighting and problem reporting on top of the purely lexical
@@ -181,7 +182,32 @@ class SmartyAnnotator : Annotator {
                 .range(element)
                 .highlightType(ProblemHighlightType.GENERIC_ERROR)
                 .create()
+            return
         }
+
+        annotateOrphanVariableName(element, holder)
+    }
+
+    /**
+     * Colors a variable name the parser could not place.
+     *
+     * [annotateVariable] needs a `Variable` node, and inside a tag the grammar rejects there is
+     * none - the name ends up as a bare leaf under a [com.intellij.psi.PsiErrorElement]. The `$`
+     * in front of it is colored lexically either way, which is what made a broken tag show a
+     * colored `$` next to a plain name. Smarty allows no space after the `$`, so the leaf
+     * immediately behind one is the name and nothing else can be.
+     */
+    private fun annotateOrphanVariableName(element: PsiElement, holder: AnnotationHolder) {
+        if (element.parent is Variable) return
+        if (!BARE_NAME.matches(element.text)) return
+        if (PsiTreeUtil.prevLeaf(element)?.node?.elementType !== SmartyTypes.DOLLAR) return
+
+        val attributes = if (element.text.lowercase() in SmartyBuiltins.RESERVED_VARIABLES) {
+            SmartySyntaxHighlighter.RESERVED_VARIABLE
+        } else {
+            SmartySyntaxHighlighter.VARIABLE
+        }
+        highlight(holder, element.textRange, attributes)
     }
 
     // ========================================================================
@@ -207,8 +233,15 @@ class SmartyAnnotator : Annotator {
         private const val NO_QUOTE = '\u0000'
 
         private val VARIABLE_NAME = Regex("""\$([a-zA-Z_]\w*)""")
-        private val PROPERTY_ACCESS = Regex("""(?:\.|->)([a-zA-Z_]\w*)""")
-        private val MODIFIER_NAME = Regex("""^\|\s*([a-zA-Z_]\w*)""")
+
+        /** A whole leaf that could be a variable name; used by [annotateOrphanVariableName]. */
+        private val BARE_NAME = Regex("""[a-zA-Z_]\w*""")
+
+        /** `@` is the third separator of an access chain: the loop property of `{$row@index}`. */
+        private val PROPERTY_ACCESS = Regex("""(?:\.|->|@)([a-zA-Z_]\w*)""")
+
+        /** The optional `@` is the array-modifier prefix of `{$rows|@count}`. */
+        private val MODIFIER_NAME = Regex("""^\|\s*@?\s*([a-zA-Z_]\w*)""")
         private val FUNCTION_NAME = Regex("""^([a-zA-Z_]\w*)\s*\(""")
     }
 }
