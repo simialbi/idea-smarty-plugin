@@ -14,10 +14,10 @@ import com.intellij.psi.tree.TokenSet
  * Where Smarty wants space inside a tag and where it does not.
  *
  * The rules only ever apply between two tokens of the same `{...}` tag. Everything a template
- * emits verbatim - the markup and the text between the tags - is lexed as
- * [SmartyTypes.TEXT], never as whitespace, so the formatter owns no whitespace out there and
- * cannot change a single character of the rendered output. See `SmartyBlock` for the
- * consequence that block bodies cannot be re-indented.
+ * emits verbatim - the markup and the text between the tags - is lexed as [SmartyTypes.TEXT], never
+ * as whitespace, so none of it is reachable from here. What happens out there is decided by the
+ * data language through the block merge in `SmartyBlock`, which is also where the whitespace
+ * between a tag and the markup around it is settled.
  *
  * Two of the rules are correctness, not taste:
  *

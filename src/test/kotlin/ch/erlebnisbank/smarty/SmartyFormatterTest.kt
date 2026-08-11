@@ -7,9 +7,11 @@ import com.intellij.psi.codeStyle.CodeStyleManager
 /**
  * What `Reformat Code` does to a template, and - at least as important - what it does not.
  *
- * The formatter only ever rewrites whitespace inside a `{...}` tag, because outside a tag the
- * lexer produces text tokens rather than whitespace. Every test that asserts something is left
- * unchanged is guarding that property.
+ * Two formatters are at work. Inside a `{...}` tag it is this plugin's, and [SmartySpacingRules]
+ * decides every space. Outside a tag it is the data language's - HTML by default - reached through
+ * the block merge described in [SmartyBlock]; the Smarty tags are indented along with the markup
+ * they stand in. What no formatter may touch is the two verbatim blocks and the text a template
+ * prints as-is; the tests below that assert something is unchanged are guarding those.
  */
 class SmartyFormatterTest : SmartyTestCase() {
 
@@ -102,13 +104,21 @@ class SmartyFormatterTest : SmartyTestCase() {
         "{if (\$a || \$b) && \$c}x{/if}"
     )
 
-    // ---------------------------------------------------------------- what stays untouched
+    // ---------------------------------------------------------------- markup
 
     /**
-     * The whole point of the design: whitespace outside a tag is template output, and the
-     * formatter has no whitespace tokens out there to rewrite.
+     * The markup is indented by the data language, and the tags come along.
+     *
+     * `<ul>` and the two `{block}` tags are at the top level of the document, so nothing encloses
+     * them and they stay at column zero. `{foreach}` is inside `<ul>` as far as the HTML tree is
+     * concerned, so it takes one step of indent exactly like `<li>` does.
+     *
+     * That `<li>` lands *beside* `{foreach}` rather than inside it is the one gap: the Smarty
+     * grammar matches `{foreach}` and `{/foreach}` as two flat siblings, so no PSI node spans the
+     * body of a block and the engine has no range to indent. Nesting blocks in the grammar is what
+     * would change this, and nothing else here.
      */
-    fun testTemplateTextIsNeverTouched() = assertUnchanged(
+    fun testMarkupIsIndentedByTheDataLanguage() = assertFormatted(
         """
         {extends file="layout.tpl"}
         {block name="content"}
@@ -118,8 +128,31 @@ class SmartyFormatterTest : SmartyTestCase() {
           {/foreach}
               </ul>
         {/block}
+        """.trimIndent(),
+        """
+        {extends file="layout.tpl"}
+        {block name="content"}
+        <ul>
+            {foreach ${'$'}items as ${'$'}item}
+            <li>{${'$'}item.title|escape}</li>
+            {/foreach}
+        </ul>
+        {/block}
         """.trimIndent()
     )
+
+    /**
+     * A tag inside an element whose whitespace is content. `<pre>` renders every space it is given,
+     * and HTML alone would keep the run intact by giving it to a single block; the block merge takes
+     * that block apart to make room for `{$code}`, leaving the whitespace unowned and so fair game
+     * for the default re-indent. [SmartyBlock] answers read-only spacing at both boundaries to
+     * prevent that - the five spaces on each side are output, not layout.
+     */
+    fun testWhitespaceInsidePreIsPreserved() = assertUnchanged(
+        "<pre>\n     {\$code}     \n</pre>"
+    )
+
+    // ---------------------------------------------------------------- what stays untouched
 
     /**
      * No braces in the payload: the lexer declares an `IN_LITERAL_BLOCK` state but never enters

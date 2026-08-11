@@ -13,8 +13,9 @@
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
     <description><![CDATA[
-        Enter short description for your plugin here.<br>
-        <em>most HTML tags may be used</em>
+<h1>Smarty Plugin for IntelliJ IDEA</h1>
+
+<p>A real-time syntax highlighting and code completion plugin for Smarty templates with a color settings page and respecting indents.</p>
         ]]></description>
 
     <!-- Product and plugin compatibility requirements.
@@ -32,6 +33,15 @@
         <fileType name="Smarty Template" implementationClass="ch.erlebnisbank.smarty.SmartyFileType" fieldName="INSTANCE"
                   language="Smarty" extensions="tpl" />
         <lang.parserDefinition language="Smarty" implementationClass="ch.erlebnisbank.smarty.SmartyParserDefinition" />
+
+        <!-- The two registrations that make a .tpl file two files. Without the first there is no
+             HTML PSI at all; without the second the HTML PSI exists but the editor still paints
+             the markup with the Smarty lexer's colours, which is to say none. Neither is implied
+             by the TemplateLanguage marker - see the classes for why. -->
+        <lang.fileViewProviderFactory language="Smarty"
+                                      implementationClass="ch.erlebnisbank.smarty.SmartyFileViewProviderFactory" />
+        <editorHighlighterProvider filetype="Smarty Template"
+                                   implementationClass="ch.erlebnisbank.smarty.SmartyEditorHighlighterProvider" />
         <lang.syntaxHighlighterFactory language="Smarty" implementationClass="ch.erlebnisbank.smarty.SmartySyntaxHighlighterFactory" />
         <colorSettingsPage implementation="ch.erlebnisbank.smarty.SmartyColorSettingsPage" />
         <annotator language="Smarty" implementationClass="ch.erlebnisbank.smarty.SmartyAnnotator" />
