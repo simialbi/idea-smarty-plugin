@@ -1,14 +1,20 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-    <id>ch.erlebnisbank.smarty</id>
+    <id>ch.erlebnisplus.smarty</id>
 
     <!-- Public plugin name should be written in Title Case.
      Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-name -->
-    <name>Smarty</name>
+    <name>Smarty Templating Engine</name>
+
+    <!-- The plugin's version. It should be incremented between the plugin versions. -->
+    <version>1.0.0-rc.1</version>
+
+    <!-- The plugin's range of compatible IntelliJ-based IDE versions. -->
+    <idea-version since-build="262.9437.185" />
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor url="https://www.erlebnisbank.ch">Erlebnisbank</vendor>
+    <vendor url="https://www.erlebnisplus.ch" email="info@erlebnisplus.ch">Erlebnisplus</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
@@ -38,38 +44,38 @@
     <!-- Extensions defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <fileType name="Smarty Template" implementationClass="ch.erlebnisbank.smarty.SmartyFileType" fieldName="INSTANCE"
+        <fileType name="Smarty Template" implementationClass="ch.erlebnisplus.smarty.SmartyFileType" fieldName="INSTANCE"
                   language="Smarty" extensions="tpl" />
-        <lang.parserDefinition language="Smarty" implementationClass="ch.erlebnisbank.smarty.SmartyParserDefinition" />
+        <lang.parserDefinition language="Smarty" implementationClass="ch.erlebnisplus.smarty.SmartyParserDefinition" />
 
         <!-- The two registrations that make a .tpl file two files. Without the first there is no
              HTML PSI at all; without the second the HTML PSI exists but the editor still paints
              the markup with the Smarty lexer's colours, which is to say none. Neither is implied
              by the TemplateLanguage marker - see the classes for why. -->
         <lang.fileViewProviderFactory language="Smarty"
-                                      implementationClass="ch.erlebnisbank.smarty.SmartyFileViewProviderFactory" />
+                                      implementationClass="ch.erlebnisplus.smarty.SmartyFileViewProviderFactory" />
         <editorHighlighterProvider filetype="Smarty Template"
-                                   implementationClass="ch.erlebnisbank.smarty.SmartyEditorHighlighterProvider" />
-        <lang.syntaxHighlighterFactory language="Smarty" implementationClass="ch.erlebnisbank.smarty.SmartySyntaxHighlighterFactory" />
-        <colorSettingsPage implementation="ch.erlebnisbank.smarty.SmartyColorSettingsPage" />
-        <annotator language="Smarty" implementationClass="ch.erlebnisbank.smarty.SmartyAnnotator" />
+                                   implementationClass="ch.erlebnisplus.smarty.SmartyEditorHighlighterProvider" />
+        <lang.syntaxHighlighterFactory language="Smarty" implementationClass="ch.erlebnisplus.smarty.SmartySyntaxHighlighterFactory" />
+        <colorSettingsPage implementation="ch.erlebnisplus.smarty.SmartyColorSettingsPage" />
+        <annotator language="Smarty" implementationClass="ch.erlebnisplus.smarty.SmartyAnnotator" />
         <codeInsight.lineMarkerProvider language="Smarty"
-                                        implementationClass="ch.erlebnisbank.smarty.SmartyLineMarkerProvider" />
+                                        implementationClass="ch.erlebnisplus.smarty.SmartyLineMarkerProvider" />
         <completion.contributor language="Smarty"
-                                implementationClass="ch.erlebnisbank.smarty.SmartyCompletionContributor" />
+                                implementationClass="ch.erlebnisplus.smarty.SmartyCompletionContributor" />
         <psi.referenceContributor language="Smarty"
-                                  implementation="ch.erlebnisbank.smarty.SmartyReferenceContributor" />
+                                  implementation="ch.erlebnisplus.smarty.SmartyReferenceContributor" />
         <lang.refactoringSupport language="Smarty"
-                                 implementationClass="ch.erlebnisbank.smarty.SmartyRefactoringSupportProvider" />
+                                 implementationClass="ch.erlebnisplus.smarty.SmartyRefactoringSupportProvider" />
         <lang.findUsagesProvider language="Smarty"
-                                 implementationClass="ch.erlebnisbank.smarty.SmartyFindUsagesProvider" />
+                                 implementationClass="ch.erlebnisplus.smarty.SmartyFindUsagesProvider" />
         <lang.foldingBuilder language="Smarty"
-                             implementationClass="ch.erlebnisbank.smarty.SmartyFoldingBuilder" />
-        <gotoSymbolContributor implementation="ch.erlebnisbank.smarty.SmartyChooseByNameContributor" />
+                             implementationClass="ch.erlebnisplus.smarty.SmartyFoldingBuilder" />
+        <gotoSymbolContributor implementation="ch.erlebnisplus.smarty.SmartyChooseByNameContributor" />
         <lang.formatter language="Smarty"
-                        implementationClass="ch.erlebnisbank.smarty.SmartyFormattingModelBuilder" />
+                        implementationClass="ch.erlebnisplus.smarty.SmartyFormattingModelBuilder" />
         <lang.commenter language="Smarty"
-                        implementationClass="ch.erlebnisbank.smarty.SmartyCommenter" />
+                        implementationClass="ch.erlebnisplus.smarty.SmartyCommenter" />
     </extensions>
 
 </idea-plugin>

@@ -1,201 +1,195 @@
-# Smarty
+# Smarty Templating Engine
 
-[![Twitter Follow](https://img.shields.io/badge/follow-%40JBPlatform-1DA1F2?logo=twitter)](https://twitter.com/JBPlatform)
-[![Developers Forum](https://img.shields.io/badge/JetBrains%20Platform-Join-blue)][jb:forum]
+[![Build](https://github.com/simialbi/idea-smarty-plugin/actions/workflows/build.yml/badge.svg)](https://github.com/simialbi/idea-smarty-plugin/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
 
-## Connect repository to GitHub
+Support for the [Smarty][smarty] template language in IntelliJ-based IDEs.
 
-1. [Create a new repository](https://github.com/new) on GitHub.
-2. Run the following commands to initialize and push this project to the repository created in step 1:
+`.tpl` files are treated as what they are: a markup document with a second language woven
+through it. The IDE's own HTML, CSS and JavaScript support keeps working, and everything inside
+`{...}` is parsed, highlighted, completed and navigable as Smarty.
+
+<!-- TODO: add a screenshot of a highlighted template here -->
+
+## Features
+
+### Editing
+
+- **Two languages in one file.** A `.tpl` file gets an HTML tree and a Smarty tree. Markup is
+  highlighted and completed by the bundled HTML support; Smarty tags are highlighted on top.
+- **Syntax highlighting** driven by the lexer: delimiters, built-in tag names, modifiers,
+  operators, numbers, strings, parentheses, brackets and comments.
+- **Semantic highlighting** driven by the PSI: template variables, the `$smarty` super global,
+  property and `->` access chains, modifier names, function calls, `{block}` and `{function}`
+  declarations, and config variables written as `{#name#}`.
+- **Colour settings page** at *Settings | Editor | Color Scheme | Smarty*, with a live preview
+  and 15 separately configurable attributes.
+- **Folding** for `{* multi-line comments *}`, `{literal}` and `{nocache}` blocks, and the body
+  of every paired tag such as `{block}…{/block}` or `{foreach}…{/foreach}`.
+- **Formatting** with indentation and spacing rules for Smarty tags that leave the surrounding
+  markup indentation intact.
+- **Commenting** with <kbd>Ctrl</kbd>+<kbd>/</kbd>, which wraps the selection in `{* … *}`.
+
+### Code completion
+
+Completion is context sensitive — what is offered depends on where the caret sits:
+
+| At the caret | Suggestions |
+|---|---|
+| `{fo⎸` | tag names: `foreach`, `for`, `function`, … |
+| `{/⎸` | the block tags that are still open, innermost first |
+| `{include ⎸` | that tag's attributes: `file`, `assign`, `scope`, … |
+| `{$user\|⎸` | modifiers: `upper`, `truncate`, `date_format`, … |
+| `{$⎸` | the variables used or assigned in this template |
+| `{$smarty.⎸` | reserved sub-keys: `get`, `post`, `foreach`, `now`, … |
+
+### Navigation and refactoring
+
+- **Gutter icons** on `{include}`, `{extends}` and `{insert}` open the referenced template, and
+  on `{block}` jump to the declarations of the same name in the templates the current one
+  inherits from.
+- **References** — <kbd>Ctrl</kbd>+<kbd>Click</kbd> a template path or a block name to jump to it.
+- **Find Usages** for block and function declarations.
+- **Rename** a `{block}` declaration in place — both the `{block name="x"}` and the bare
+  `{block x}` form are rewritten, quotes included.
+- **Go to Symbol** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>) lists the
+  `{block}` and `{function}` declarations of the project.
+
+### Problems reported in the editor
+
+| Severity | Reported for |
+|---|---|
+| Error | an unexpected character inside a tag |
+| Warning | a template path that cannot be resolved; a modifier given more parameters than it accepts |
+| Weak warning | an unknown modifier — one that must come from a Smarty plugin or a PHP function |
+
+## Requirements
+
+| | |
+|---|---|
+| IDE | IntelliJ IDEA — the plugin depends on the `com.intellij.java` module, so it does not load in PhpStorm or WebStorm |
+| Declared compatibility | `since-build 262.9437.185` (see `src/main/resources/META-INF/plugin.xml`) |
+| Compile target | IntelliJ Platform 2025.3.5 (see `build.gradle.kts`) |
+| JDK for building | 21, the version CI builds with |
+
+> The declared `since-build` and the compile target are currently out of step. Keep the
+> `intellijIdea(...)` version in `build.gradle.kts` and `<idea-version since-build="...">` aligned
+> with the oldest IDE you actually want to support.
+
+## Installation
+
+The plugin is not on the JetBrains Marketplace yet. Build it and install the ZIP by hand:
 
 ```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/<username>/<repository>.git
-git push -u origin main
+./gradlew buildPlugin
 ```
 
-3. Configure publishing [secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) in the GitHub
-   repository settings:
+The distribution lands in `build/distributions/`. In the IDE, go to
+*Settings | Plugins | ⚙ | Install Plugin from Disk…* and pick that ZIP.
 
-| Secret                 | Description                                                                                                |
-|------------------------|------------------------------------------------------------------------------------------------------------|
-| `PUBLISH_TOKEN`        | JetBrains Marketplace token — [generate here](https://plugins.jetbrains.com/author/me/tokens)              |
-| `CERTIFICATE_CHAIN`    | Plugin signing certificate chain ([docs](https://plugins.jetbrains.com/docs/intellij/plugin-signing.html)) |
-| `PRIVATE_KEY`          | Plugin signing private key                                                                                 |
-| `PRIVATE_KEY_PASSWORD` | Password for the private key                                                                               |
+## Building from source
 
-## Overview
-
-This repository implements an IntelliJ Platform plugin.
-
-## Demo Functionality
-
-The sample plugin adds a `My Tool Window` tool window with a simple functionality of shuffling a random number.
-
-## Plugin structure
-
-A generated project contains the following content structure:
-
-```
-.
-├── .github/                GitHub Workflows, issue templates, and Dependabot configuration
-├── .run/                   Predefined Run/Debug Configurations
-├── gradle
-│   ├── wrapper/            Gradle Wrapper
-│   ├── libs.versions.toml  Version catalog
-├── src                     Plugin sources
-│   └── main
-│       ├── kotlin/         Kotlin production sources
-│       └── resources/      Plugin resources
-│           ├── META-INF/   Plugin configuration file and logo
-│           └── messages/   Message bundles
-├── .gitignore              Git ignoring rules
-├── build.gradle.kts        Gradle build configuration
-├── gradle.properties       Gradle configuration properties
-├── gradlew                 *nix Gradle Wrapper script
-├── gradlew.bat             Windows Gradle Wrapper script
-├── README.md               This file
-└── settings.gradle.kts     Gradle project settings
+```bash
+./gradlew build          # compile, run the tests, verify the plugin
+./gradlew test           # tests only
+./gradlew runIde         # start a sandbox IDE with the plugin loaded
+./gradlew verifyPlugin   # IntelliJ Plugin Verifier
 ```
 
-In addition to the configuration files, the most crucial part is the `src` directory, which contains our implementation
-and the manifest for our plugin – [plugin.xml][file:plugin.xml].
+Three run configurations are checked in under `.run/` and show up in the IDE's run
+configuration list: **Run IDE with Plugin**, **Run Tests** and **Run Verifications**.
 
-> [!NOTE]
-> To use Java in your plugin, create the `/src/main/java` directory.
+### Regenerating the lexer and the parser
 
-The plugin logo is placed in `src/main/resources/META-INF/pluginIcon.svg`. See [Plugin Logo][docs:logo] for more
-information and logo requirements.
+The lexer, parser and PSI classes under `src/main/gen` are generated from two sources and are
+**checked into the repository**, so a regeneration always produces a reviewable diff. Regenerate
+whenever you touch `Smarty.flex` or `Smarty.bnf`.
 
-## Build script
+Inside the IDE (needs the *Grammar-Kit* plugin):
 
-The [build.gradle.kts][file:build.gradle.kts] is the core of the project definition. It applies three Gradle plugins:
+- right-click `src/main/kotlin/ch/erlebnisplus/smarty/Smarty.flex` → **Run JFlex Generator**
+- right-click `src/main/kotlin/ch/erlebnisplus/smarty/Smarty.bnf` → **Generate Parser Code**
 
-| Plugin                            | Description                                                                      |
-|-----------------------------------|----------------------------------------------------------------------------------|
-| `org.jetbrains.kotlin.jvm`        | Adds Kotlin support                                                              |
-| `org.jetbrains.changelog`         | Simplifies patching the [CHANGELOG.md][file:CHANGELOG.md] file                   |
-| `org.jetbrains.intellij.platform` | The [IntelliJ Platform Gradle Plugin][docs:intellij-platform-gradle-plugin-docs] |
+The lexer can also be regenerated from the command line with the JFlex jar and the platform's
+lexer skeleton, both of which sit at the repository root:
 
-The `intellijPlatform` dependencies block selects the IDE to compile against:
-
-```kotlin
-intellijIdea("2025.3.5")
+```bash
+java -jar jflex-1.10.17.jar \
+  --skel idea-flex.skeleton \
+  -d src/main/gen/ch/erlebnisplus/smarty \
+  src/main/kotlin/ch/erlebnisplus/smarty/Smarty.flex
 ```
 
-See [Target Versions][docs:target-version] for more information.
+## Project layout
 
-The `intellijPlatform` dependencies block also contains a dependency on the platform testing framework:
-
-```kotlin
-testFramework(TestFrameworkType.Platform)
+```
+├── src/main/kotlin/ch/erlebnisplus/smarty/
+│   ├── Smarty.flex                  lexer definition
+│   ├── Smarty.bnf                   grammar; generates the parser and the PSI interfaces
+│   ├── Smarty*.kt                   the plugin: highlighter, annotator, completion,
+│   │                                references, folding, formatter, commenter, …
+│   └── psi/                         token sets, built-in tag and modifier tables
+│       └── impl/                    hand-written PSI helpers and mixins
+├── src/main/gen/ch/erlebnisplus/smarty/
+│   ├── SmartyLexer.java             generated by JFlex — do not edit
+│   ├── parser/                      generated by Grammar-Kit — do not edit
+│   └── psi/                         generated by Grammar-Kit — do not edit
+├── src/main/resources/META-INF/plugin.xml
+├── src/test/kotlin/ch/erlebnisplus/smarty/
+├── jflex-1.10.17.jar, idea-flex.skeleton
+└── .run/                            checked-in run configurations
 ```
 
-See [Testing][docs:testing] for more information
+## Tests
 
-## Plugin configuration file
+The suite runs on the platform test framework (`BasePlatformTestCase`) and covers parsing,
+references, Find Usages, go-to-symbol, folding, formatting, operators, the commenter, the
+template-language layering and the colour settings page.
 
-The plugin configuration file is a [plugin.xml][file:plugin.xml] file located in the `src/main/resources/META-INF`
-directory. It provides general information about the plugin, its dependencies, extensions, and listeners.
+```bash
+./gradlew test
+```
 
-You can read more about this file in the [Plugin Configuration File][docs:plugin.xml] section of our documentation.
+The colour settings page is self-checking: its tests assert that the preview sample parses
+without errors, that every declared attribute is actually reachable in that sample, and that
+the sample uses no colour key that is not offered in the settings dialog.
 
-### Plugin ID and name
+## Known limitations
 
-Generated plugin ID and name may require adjustment.
+The grammar does not yet cover everything Smarty allows. The following constructs parse as
+errors today:
 
-These values are generated based on _Group ID_ and _Artifact ID_ provided in the IDE Plugin wizard. It is recommended to
-review `<id>` and `<name>` elements in the plugin.xml file, and adjust them if needed.
+- `{assign var="x" value="y"}` — the attribute form. Use `{assign $x = "y"}`.
+- `{strip}` — the closing `{/strip}` is recognised, the opening tag is not.
+- Reserved words where an identifier or a value is expected, for example
+  `{$x|default:"n/a"}`, `{section name=foo loop=$bar}`, `nocache=true` and `{#$section#}`.
+  Fixing this properly needs context-sensitive lexing.
+- `{$item@index}` and `{$arr|@count}` — the `@` forms.
+- `{$smarty.config.$foo}` — a variable as the last step of an access chain.
+- `auto_literal`, where a `{` followed by whitespace is output verbatim.
 
-Please note that Gradle properties `rootProject.name` and `project.group` don't need to match the `<id>` and `<name>`
-elements. There is no IntelliJ Platform-related reason they should as they serve different functions.
+Other gaps:
 
-## Predefined Run/Debug configurations
+- No element manipulator is registered, so renaming does not rewrite the string literals that
+  point at a declaration — neither `{include file="…"}` when a template file is renamed, nor a
+  `{block}` name in the templates that override it.
+- `{call name="x"}` does not resolve to the matching `{function name="x"}`.
+- There is no code style settings page, so the spacing options the formatter reads cannot be
+  changed in the UI yet.
 
-Within the default project structure, there is a `.run` directory provided containing predefined *Run/Debug
-configurations* that expose corresponding Gradle tasks:
+Contributions for any of these are welcome.
 
-| Configuration name  | Description                                                                                                                                                                           |
-|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Run IDE with Plugin | Runs [`:runIde`][docs:intellij-platform-gradle-plugin-runIde] IntelliJ Platform Gradle Plugin task. Use the *Debug* icon for plugin debugging.                                        |
-| Run Tests           | Runs [`:check`][gradle:lifecycle-tasks] Gradle task.                                                                                                                                  |
-| Run Verifications   | Runs [`:verifyPlugin`][docs:intellij-platform-gradle-plugin-verifyPlugin] IntelliJ Platform Gradle Plugin task to check the plugin compatibility against the specified IntelliJ IDEs. |
+## Contributing
 
-> [!NOTE]
-> You can find the logs from the running task in the `idea.log` tab.
+1. Fork and branch.
+2. Change `Smarty.flex` or `Smarty.bnf` rather than the generated sources, then regenerate as
+   described above and commit the generated diff along with your change.
+3. Add a test — `src/test/kotlin/ch/erlebnisplus/smarty/` has an example for every extension
+   point the plugin registers.
+4. Keep `./gradlew build` green and add an entry to `CHANGELOG.md` under *Unreleased*.
 
-## Publishing the plugin
+## License
 
-> [!TIP]
-> Make sure to follow all guidelines listed in [Publishing a Plugin][docs:publishing] to follow all recommended and
-required steps.
+[MIT](LICENSE.md) © Erlebnisplus
 
-Releasing a plugin to [JetBrains Marketplace](https://plugins.jetbrains.com) is a straightforward operation that uses
-the `publishPlugin` Gradle task provided by
-the [intellij-platform-gradle-plugin][docs:intellij-platform-gradle-plugin-docs].
-
-You can also upload the plugin to the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/upload)
-manually via UI.
-
-## GitHub Integration
-
-### GitHub Actions
-
-The project includes [GitHub Actions][https://docs.github.com/en/actions] workflows for automated CI/CD:
-
-| Workflow                                 | Trigger        | Description                                                     |
-|------------------------------------------|----------------|-----------------------------------------------------------------|
-| [Build](.github/workflows/build.yml)     | Push / PR      | Builds, tests, and verifies the plugin; creates a draft release |
-| [Release](.github/workflows/release.yml) | GitHub Release | Publishes the plugin to JetBrains Marketplace                   |
-
-### GitHub issue templates
-
-The project includes GitHub issue templates:
-
-- [Bug Report](.github/ISSUE_TEMPLATE/bug-report.yml)
-- [Feature Request](.github/ISSUE_TEMPLATE/feature-request.yml)
-
-See [Syntax for issue forms](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms).
-
-### Dependabot
-
-[Dependabot configuration](.github/dependabot.yml) file enables tracking outdated or vulnerable dependencies.
-
-## Useful links
-
-- [IntelliJ Platform SDK Plugin SDK][docs]
-- [IntelliJ Platform Gradle Plugin Documentation][docs:intellij-platform-gradle-plugin-docs]
-- [IntelliJ Platform Explorer][jb:ipe]
-- [JetBrains Marketplace Quality Guidelines][jb:quality-guidelines]
-- [IntelliJ Platform UI Guidelines][jb:ui-guidelines]
-- [JetBrains Marketplace Paid Plugins][jb:paid-plugins]
-- [IntelliJ SDK Code Samples][gh:code-samples]
-
-[docs]: https://plugins.jetbrains.com/docs/intellij
-[docs:plugin.xml]: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html?from=IJPluginReadmeFile
-[docs:publishing]: https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginReadmeFile
-[docs:intellij-platform-gradle-plugin-docs]: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin.html?from=IJPluginReadmeFile
-[docs:intellij-platform-gradle-plugin-runIde]: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-tasks.html?from=IJPluginReadmeFile#runIde
-[docs:intellij-platform-gradle-plugin-verifyPlugin]: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-tasks.html?from=IJPluginReadmeFile#verifyPlugin
-[docs:logo]: https://plugins.jetbrains.com/docs/intellij/plugin-icon-file.html?from=IJPluginReadmeFile
-[docs:target-version]: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html?from=IJPluginReadmeFile#target-versions
-[docs:testing]: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html?from=IJPluginReadmeFile#testing
-
-[file:build.gradle.kts]: ./build.gradle.kts
-[file:CHANGELOG.md]: ./CHANGELOG.md
-[file:gradle.properties]: ./gradle.properties
-[file:plugin.xml]: ./src/main/resources/META-INF/plugin.xml
-
-[gh:code-samples]: https://github.com/JetBrains/intellij-sdk-code-samples
-
-[gradle:lifecycle-tasks]: https://docs.gradle.org/current/userguide/java_plugin.html#lifecycle_tasks
-
-[jb:github]: https://github.com/JetBrains/.github/blob/main/profile/README.md
-[jb:forum]: https://platform.jetbrains.com/
-[jb:quality-guidelines]: https://plugins.jetbrains.com/docs/marketplace/quality-guidelines.html
-[jb:paid-plugins]: https://plugins.jetbrains.com/docs/marketplace/paid-plugins-marketplace.html
-[jb:ipe]: https://jb.gg/ipe
-[jb:ui-guidelines]: https://jetbrains.github.io/ui
+[smarty]: https://smarty-php.github.io/smarty/stable/

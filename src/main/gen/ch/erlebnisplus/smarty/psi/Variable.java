@@ -1,0 +1,24 @@
+// This is a generated file. Not intended for manual editing.
+package ch.erlebnisplus.smarty.psi;
+
+import java.util.List;
+import org.jetbrains.annotations.*;
+import com.intellij.psi.PsiElement;
+
+public interface Variable extends PsiElement {
+
+  @NotNull
+  List<MemberAccess> getMemberAccessList();
+
+  @Nullable
+  String getName();
+
+  boolean hasArrayAccess();
+
+  @NotNull
+  String[] getArrayIndices();
+
+  @NotNull
+  String[] getPropertyChain();
+
+}
