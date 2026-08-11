@@ -177,7 +177,7 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // APPEND variable '=' expr assign_clause*
+  // APPEND (assign_shorthand | attribute_clause+)
   public static boolean append_statement(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "append_statement")) return false;
     if (!nextTokenIs(builder_, "<append statement>", APPEND)) return false;
@@ -185,23 +185,35 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     Marker marker_ = enter_section_(builder_, level_, _NONE_, APPEND_STATEMENT, "<append statement>");
     result_ = consumeToken(builder_, APPEND);
     pinned_ = result_; // pin = 1
-    result_ = result_ && report_error_(builder_, variable(builder_, level_ + 1));
-    result_ = pinned_ && report_error_(builder_, consumeToken(builder_, ASSIGN)) && result_;
-    result_ = pinned_ && report_error_(builder_, expr(builder_, level_ + 1)) && result_;
-    result_ = pinned_ && append_statement_4(builder_, level_ + 1) && result_;
+    result_ = result_ && append_statement_1(builder_, level_ + 1);
     exit_section_(builder_, level_, marker_, result_, pinned_, null);
     return result_ || pinned_;
   }
 
-  // assign_clause*
-  private static boolean append_statement_4(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "append_statement_4")) return false;
-    while (true) {
+  // assign_shorthand | attribute_clause+
+  private static boolean append_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "append_statement_1")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = assign_shorthand(builder_, level_ + 1);
+    if (!result_) result_ = append_statement_1_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // attribute_clause+
+  private static boolean append_statement_1_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "append_statement_1_1")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = attribute_clause(builder_, level_ + 1);
+    while (result_) {
       int pos_ = current_position_(builder_);
-      if (!assign_clause(builder_, level_ + 1)) break;
-      if (!empty_element_parsed_guard_(builder_, "append_statement_4", pos_)) break;
+      if (!attribute_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "append_statement_1_1", pos_)) break;
     }
-    return true;
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
@@ -433,7 +445,33 @@ public class SmartyParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // ASSIGN_KW variable '=' expr assign_clause*
+  // variable '=' expr assign_clause*
+  static boolean assign_shorthand(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assign_shorthand")) return false;
+    if (!nextTokenIs(builder_, DOLLAR)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = variable(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, ASSIGN);
+    result_ = result_ && expr(builder_, level_ + 1);
+    result_ = result_ && assign_shorthand_3(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // assign_clause*
+  private static boolean assign_shorthand_3(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assign_shorthand_3")) return false;
+    while (true) {
+      int pos_ = current_position_(builder_);
+      if (!assign_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "assign_shorthand_3", pos_)) break;
+    }
+    return true;
+  }
+
+  /* ********************************************************** */
+  // ASSIGN_KW (assign_shorthand | attribute_clause+)
   public static boolean assign_statement(PsiBuilder builder_, int level_) {
     if (!recursion_guard_(builder_, level_, "assign_statement")) return false;
     if (!nextTokenIs(builder_, "<assign statement>", ASSIGN_KW)) return false;
@@ -441,23 +479,35 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     Marker marker_ = enter_section_(builder_, level_, _NONE_, ASSIGN_STATEMENT, "<assign statement>");
     result_ = consumeToken(builder_, ASSIGN_KW);
     pinned_ = result_; // pin = 1
-    result_ = result_ && report_error_(builder_, variable(builder_, level_ + 1));
-    result_ = pinned_ && report_error_(builder_, consumeToken(builder_, ASSIGN)) && result_;
-    result_ = pinned_ && report_error_(builder_, expr(builder_, level_ + 1)) && result_;
-    result_ = pinned_ && assign_statement_4(builder_, level_ + 1) && result_;
+    result_ = result_ && assign_statement_1(builder_, level_ + 1);
     exit_section_(builder_, level_, marker_, result_, pinned_, null);
     return result_ || pinned_;
   }
 
-  // assign_clause*
-  private static boolean assign_statement_4(PsiBuilder builder_, int level_) {
-    if (!recursion_guard_(builder_, level_, "assign_statement_4")) return false;
-    while (true) {
+  // assign_shorthand | attribute_clause+
+  private static boolean assign_statement_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assign_statement_1")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = assign_shorthand(builder_, level_ + 1);
+    if (!result_) result_ = assign_statement_1_1(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // attribute_clause+
+  private static boolean assign_statement_1_1(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "assign_statement_1_1")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = attribute_clause(builder_, level_ + 1);
+    while (result_) {
       int pos_ = current_position_(builder_);
-      if (!assign_clause(builder_, level_ + 1)) break;
-      if (!empty_element_parsed_guard_(builder_, "assign_statement_4", pos_)) break;
+      if (!attribute_clause(builder_, level_ + 1)) break;
+      if (!empty_element_parsed_guard_(builder_, "assign_statement_1_1", pos_)) break;
     }
-    return true;
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
   }
 
   /* ********************************************************** */
@@ -471,6 +521,40 @@ public class SmartyParser implements PsiParser, LightPsiParser {
     result_ = result_ && consumeToken(builder_, ASSIGN);
     result_ = result_ && expr(builder_, level_ + 1);
     exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  /* ********************************************************** */
+  // (IDENTIFIER | NOCACHE) '=' expr | NOCACHE
+  static boolean attribute_clause(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "attribute_clause")) return false;
+    if (!nextTokenIs(builder_, "", IDENTIFIER, NOCACHE)) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = attribute_clause_0(builder_, level_ + 1);
+    if (!result_) result_ = consumeToken(builder_, NOCACHE);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // (IDENTIFIER | NOCACHE) '=' expr
+  private static boolean attribute_clause_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "attribute_clause_0")) return false;
+    boolean result_;
+    Marker marker_ = enter_section_(builder_);
+    result_ = attribute_clause_0_0(builder_, level_ + 1);
+    result_ = result_ && consumeToken(builder_, ASSIGN);
+    result_ = result_ && expr(builder_, level_ + 1);
+    exit_section_(builder_, marker_, null, result_);
+    return result_;
+  }
+
+  // IDENTIFIER | NOCACHE
+  private static boolean attribute_clause_0_0(PsiBuilder builder_, int level_) {
+    if (!recursion_guard_(builder_, level_, "attribute_clause_0_0")) return false;
+    boolean result_;
+    result_ = consumeToken(builder_, IDENTIFIER);
+    if (!result_) result_ = consumeToken(builder_, NOCACHE);
     return result_;
   }
 

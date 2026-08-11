@@ -337,13 +337,32 @@ insert_statement ::=
 // ASSIGNMENT STATEMENTS
 // ============================================================================
 
+// Both tags come in two spellings. The classic one names its parts, {assign var="total" value=0},
+// and is what most templates are written in; the shorthand {assign $total = 0} came with Smarty 3.
+//
+// `var`, `value`, `index` and `scope` stay ordinary identifiers to the lexer. A token of their own
+// would take those words away from every other position an identifier can hold - {$var} and
+// {$value} are not rare things to write - so the attribute form is matched structurally, the way
+// declaration_name matches {block name="content"}, and which attribute is which is read from the
+// PSI in SmartyPsiImplUtil.
+// https://smarty-php.github.io/smarty/stable/designers/language-builtin-functions/language-function-assign
 assign_statement ::=
-    ASSIGN_KW variable '=' expr assign_clause*
+    ASSIGN_KW (assign_shorthand | attribute_clause+)
     {pin=1 name="assign statement" methods=[getAssignTarget getAssignValue]}
 
+// {append} takes the same two forms. Its extra attribute, `index`, needs nothing here: it is an
+// attribute like any other.
+// https://smarty-php.github.io/smarty/stable/designers/language-builtin-functions/language-function-append
 append_statement ::=
-    APPEND variable '=' expr assign_clause*
-    {pin=1 name="append statement"}
+    APPEND (assign_shorthand | attribute_clause+)
+    {pin=1 name="append statement" methods=[getAssignTarget getAssignValue]}
+
+private assign_shorthand ::= variable '=' expr assign_clause*
+
+// An attribute of the classic form. `nocache` is spelled out because the lexer gives it a keyword
+// token of its own, so it can never arrive as an assign_clause, and because it is also valid as a
+// bare flag: {assign var="x" value=1 nocache}.
+private attribute_clause ::= (IDENTIFIER | NOCACHE) '=' expr | NOCACHE
 
 capture_statement ::=
     CAPTURE variable assign_clause*

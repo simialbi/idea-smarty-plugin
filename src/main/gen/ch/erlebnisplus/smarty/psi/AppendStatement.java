@@ -13,4 +13,10 @@ public interface AppendStatement extends PsiElement {
   @Nullable
   Variable getVariable();
 
+  @NotNull
+  String getAssignTarget();
+
+  @Nullable
+  Expr getAssignValue();
+
 }

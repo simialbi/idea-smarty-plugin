@@ -157,7 +157,8 @@ the settings dialog.
 
 The grammar does not yet cover everything Smarty allows. The following constructs parse as errors today:
 
-- `{assign var="x" value="y"}` — the attribute form. Use `{assign $x = "y"}`.
+- A modifier on any value, for example `{assign var="x" value=$y|escape}` or `{$a + $b|round}` —
+  `|` is only accepted directly after a variable that stands on its own.
 - `{strip}` — the closing `{/strip}` is recognised, the opening tag is not.
 - Reserved words where an identifier or a value is expected, for example
   `{$x|default:"n/a"}`, `{section name=foo loop=$bar}`, `nocache=true` and `{#$section#}`. Fixing this properly needs

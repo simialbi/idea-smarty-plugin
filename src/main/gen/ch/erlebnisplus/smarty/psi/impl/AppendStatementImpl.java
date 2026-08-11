@@ -37,4 +37,16 @@ public class AppendStatementImpl extends ASTWrapperPsiElement implements AppendS
     return findChildByClass(Variable.class);
   }
 
+  @Override
+  @NotNull
+  public String getAssignTarget() {
+    return SmartyPsiImplUtil.getAssignTarget(this);
+  }
+
+  @Override
+  @Nullable
+  public Expr getAssignValue() {
+    return SmartyPsiImplUtil.getAssignValue(this);
+  }
+
 }

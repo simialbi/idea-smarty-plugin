@@ -375,22 +375,69 @@ class SmartyPsiImplUtil private constructor() {
         // ========================================================================
 
         /**
-         * Gets the target variable for assignment.
+         * The name of the variable an `{assign}` or `{append}` writes to, without the `$`.
+         *
+         * Both spellings are read: the shorthand `{assign $total = 0}` keeps its target in a
+         * [Variable] of its own, the classic `{assign var="total" value=0}` in the `var`
+         * attribute. Telling them apart matters - looking for the first variable anywhere below
+         * the tag would answer `y` for `{assign var="x" value=$y}`.
          */
         @JvmStatic
-        fun getAssignTarget(element: AssignStatement): String {
-            val `var` = PsiTreeUtil.findChildOfType(element, Variable::class.java)
-            return if (`var` != null) getName(`var`) ?: "" else ""
+        fun getAssignTarget(element: PsiElement): String {
+            shorthandTarget(element)?.let { return getName(it) ?: "" }
+
+            val value = attributeValue(element, VAR_ATTRIBUTE) ?: return ""
+            return StringUtil.unquoteString(value.text)
         }
 
         /**
-         * Gets the value expression from assignment.
+         * The expression being assigned - `$y` in both `{assign $x = $y}` and
+         * `{assign var="x" value=$y}`.
          */
         @JvmStatic
-        fun getAssignValue(element: AssignStatement): Expr? {
-            val exprs = PsiTreeUtil.getChildrenOfType(element, Expr::class.java)
-            return if (exprs != null && exprs.isNotEmpty()) exprs[0] else null
+        fun getAssignValue(element: PsiElement): Expr? {
+            if (shorthandTarget(element) != null) {
+                return PsiTreeUtil.getChildOfType(element, Expr::class.java)
+            }
+            return attributeValue(element, VALUE_ATTRIBUTE)
         }
+
+        /**
+         * The `$x` of the shorthand form. Only a direct child counts: in the classic form every
+         * variable belongs to an attribute value and sits one level deeper.
+         */
+        private fun shorthandTarget(element: PsiElement): Variable? =
+            PsiTreeUtil.getChildOfType(element, Variable::class.java)
+
+        /**
+         * The value of one attribute of a tag written in the classic form.
+         *
+         * `attribute_clause` is private in the grammar, so the attributes are flat in the tree -
+         * a name leaf, `=`, an expression, repeated. The name of an attribute is therefore
+         * whichever leaf came last before its value.
+         */
+        private fun attributeValue(element: PsiElement, name: String): Expr? {
+            var attribute: String? = null
+
+            for (child in meaningfulChildren(element)) {
+                when {
+                    child is Expr -> {
+                        if (attribute == name) return child
+                        attribute = null
+                    }
+
+                    child.node.elementType === SmartyTypes.ASSIGN -> {}
+
+                    // The lexer is caseless, so `VAR=` names the same attribute as `var=`.
+                    else -> attribute = child.text.lowercase()
+                }
+            }
+
+            return null
+        }
+
+        private const val VAR_ATTRIBUTE = "var"
+        private const val VALUE_ATTRIBUTE = "value"
 
         // ========================================================================
         // INCLUDE/EXTEND METHODS
